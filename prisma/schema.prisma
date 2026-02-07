@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  password              String?
+  name                  String
+  role                  String   // 'user' | 'club' | 'promoter' | 'dj' | 'admin'
+  gender                String?  // 'male' | 'female' | 'other'
+  lookingFor            String?  // 'men' | 'women' | 'both'
+  dateOfBirth           DateTime?
+  age                   Int?
+  ageVerified           Boolean  @default(false)
+  idVerificationStatus  String   @default("not_required") // 'pending' | 'approved' | 'rejected' | 'not_required'
+  idVerificationDoc     String?
+  county                String?  // Kenya county
+  bio                   String?
+  profileImage          String?
+  images                String?  // JSON array as string
+  isVerified            Boolean  @default(false)
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Club specific fields
+  clubName              String?
+  clubAddress           String?
+  clubCounty            String?  // Kenya county
+  clubMusicType         String?  // JSON array as string
+  clubDressCode         String?
+  clubCapacity          Int?
+
+  // DJ specific fields
+  djName                String?
+  djGenre               String?  // JSON array as string
+  djMusicLinks          String?  // JSON array as string
+  djBio                 String?
+
+  // Relations
+  ownedClubs            Club[]           @relation("ClubOwner")
+  bookings              Booking[]
+  sentMessages          Message[]        @relation("MessageSender")
+  receivedMessages      Message[]        @relation("MessageRecipient")
+  djGigApplications     DJGigApplication[]
+  promotedEvents        Event[]           @relation("EventPromoter")
+  djEvents              Event[]           @relation("EventDJ")
+
+  @@index([email])
+  @@index([role])
+  @@index([county])
+  @@index([isActive])
+}
+
+model Club {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation("ClubOwner", fields: [ownerId], references: [id])
+  name          String
+  address       String
+  county        String   // Kenya county
+  musicType     String   // JSON array as string
+  dressCode     String
+  capacity      Int
+  description   String?
+  images        String?  // JSON array as string
+  logo          String?
+  website       String?
+  phone         String?
+  email         String?
+  openingHours  String?  // JSON object as string
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  events        Event[]
+  bookings      Booking[]
+  djGigApplications DJGigApplication[]
+
+  @@index([county])
+  @@index([isVerified])
+  @@index([isActive])
+}
+
+model Event {
+  id              String   @id @default(cuid())
+  clubId          String
+  club            Club     @relation(fields: [clubId], references: [id])
+  promoterId      String?
+  promoter        User?    @relation("EventPromoter", fields: [promoterId], references: [id])
+  djId            String?
+  dj              User?    @relation("EventDJ", fields: [djId], references: [id])
+  title           String
+  description     String?
+  date            DateTime
+  startTime       String
+  endTime         String
+  eventType       String   @default("regular") // 'regular' | 'special' | 'featured'
+  coverCharge     Float?
+  dressCode        String?
+  ageRestriction  Int?
+  image           String?
+  isFeatured      Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  bookings        Booking[]
+
+  @@index([clubId])
+  @@index([date])
+  @@index([isFeatured])
+}
+
+model Booking {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  clubId          String
+  club            Club     @relation(fields: [clubId], references: [id])
+  eventId         String?
+  event           Event?   @relation(fields: [eventId], references: [id])
+  bookingType     String   // 'table' | 'booth' | 'general' | 'dj_gig'
+  date            DateTime
+  time            String
+  numberOfGuests  Int
+  specialRequests String?
+  status          String   @default("pending") // 'pending' | 'confirmed' | 'rejected' | 'cancelled' | 'completed'
+  tableNumber     String?
+  totalAmount     Float?
+  paymentStatus   String   @default("pending") // 'pending' | 'paid' | 'refunded'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([clubId])
+  @@index([status])
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  senderId      String
+  sender        User     @relation("MessageSender", fields: [senderId], references: [id])
+  recipientId   String
+  recipient     User     @relation("MessageRecipient", fields: [recipientId], references: [id])
+  content       String
+  type          String   @default("message") // 'message' | 'club_invite'
+  relatedClubId String?
+  relatedEventId String?
+  isRead        Boolean  @default(false)
+  isModerated   Boolean  @default(false)
+  isBlocked     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([isRead])
+}
+
+model DJGigApplication {
+  id        String   @id @default(cuid())
+  djId      String
+  dj        User     @relation(fields: [djId], references: [id])
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+  eventId   String?
+  message   String?
+  status    String   @default("pending") // 'pending' | 'accepted' | 'rejected'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([djId])
+  @@index([clubId])
+  @@index([status])
+}

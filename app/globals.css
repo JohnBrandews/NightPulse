@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-night-darker text-white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent-primary hover:bg-accent-primary/90 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl;
+  }
+  
+  .btn-secondary {
+    @apply bg-night-light hover:bg-night-lighter text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 border border-night-lighter;
+  }
+  
+  .input-field {
+    @apply w-full bg-night-light border border-night-lighter rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent;
+  }
+  
+  .card {
+    @apply bg-night-light border border-night-lighter rounded-xl p-6 shadow-lg;
+  }
+  
+  .neon-glow {
+    @apply shadow-[0_0_10px_#9d4edd,0_0_20px_#9d4edd,0_0_30px_#9d4edd];
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-neon-pink via-neon-purple to-neon-blue bg-clip-text text-transparent;
+  }
+}
