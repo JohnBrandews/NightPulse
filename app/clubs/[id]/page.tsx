@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Layout from '@/components/Layout';
-import { FiMapPin, FiMusic, FiUsers, FiCalendar } from 'react-icons/fi';
+import { FiMapPin, FiMusic, FiUsers, FiCalendar, FiCheckCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ClubDetailPage() {
@@ -24,9 +24,14 @@ export default function ClubDetailPage() {
 
   const loadClub = async () => {
     try {
-      const res = await fetch(`/api/clubs/${params.id}`);
+      const [res, eventsRes] = await Promise.all([
+        fetch(`/api/clubs/${params.id}`),
+        fetch(`/api/events?clubId=${params.id}`)
+      ]);
       const data = await res.json();
-      setClub(data.club);
+      const eventsData = await eventsRes.json();
+
+      setClub({ ...data.club, events: eventsData.events || [] });
     } catch (error) {
       console.error('Failed to load club:', error);
     }
@@ -46,6 +51,15 @@ export default function ClubDetailPage() {
 
       const data = await res.json();
 
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Please log in first to make a booking');
+          return;
+        }
+        toast.error(data.error || 'Failed to create booking');
+        return;
+      }
+
       if (res.ok) {
         toast.success('Booking request submitted!');
         setShowBookingForm(false);
@@ -57,7 +71,6 @@ export default function ClubDetailPage() {
           specialRequests: '',
         });
       } else {
-        toast.error(data.error || 'Failed to create booking');
       }
     } catch (error) {
       toast.error('An error occurred');
@@ -81,7 +94,12 @@ export default function ClubDetailPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{club.name}</h1>
+          <h1 className="text-4xl font-bold mb-2 flex items-center gap-2">
+            {club.name}
+            {club.isVerified && (
+              <FiCheckCircle className="w-6 h-6 text-blue-500" title="Verified Club" />
+            )}
+          </h1>
           <div className="flex items-center space-x-4 text-gray-400">
             <span className="flex items-center">
               <FiMapPin className="w-4 h-4 mr-1" />
@@ -130,6 +148,30 @@ export default function ClubDetailPage() {
                 <p className="text-gray-300">{club.dressCode}</p>
               </div>
             )}
+
+            {/* UPCOMING EVENTS SECTION */}
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
+              {club.events && club.events.length > 0 ? (
+                <div className="space-y-4">
+                  {club.events.map((event: any) => (
+                    <div key={event.id} className="bg-gray-800 p-4 rounded-lg flex justify-between items-center group hover:bg-gray-700 transition">
+                      <div>
+                        <h3 className="font-bold text-lg text-white group-hover:text-accent-primary transition">{event.title}</h3>
+                        <p className="text-sm text-gray-400 flex items-center mt-1">
+                          <FiCalendar className="mr-2" /> {new Date(event.date).toLocaleDateString()} at {event.startTime}
+                        </p>
+                      </div>
+                      <a href={`/events/${event.id}`} className="btn-secondary text-sm">
+                        View & Reserve
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400">No upcoming events listed.</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">

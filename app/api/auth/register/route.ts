@@ -44,12 +44,12 @@ const registerSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
+
     // Clean up empty strings
     if (body.gender === '') body.gender = undefined;
     if (body.lookingFor === '') body.lookingFor = undefined;
     if (body.dateOfBirth === '') body.dateOfBirth = undefined;
-    
+
     const validatedData = registerSchema.parse(body);
 
     // Check if user already exists
@@ -72,9 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Clean up empty strings for optional fields
-    if (validatedData.gender === '') validatedData.gender = undefined;
-    if (validatedData.lookingFor === '') validatedData.lookingFor = undefined;
-    if (validatedData.dateOfBirth === '') validatedData.dateOfBirth = undefined;
+
 
     // Age verification for female users
     let ageVerified = false;
@@ -84,7 +82,7 @@ export async function POST(req: NextRequest) {
     if (validatedData.gender === 'female' && validatedData.dateOfBirth) {
       const dob = new Date(validatedData.dateOfBirth);
       const ageValidation = validateDateOfBirth(dob);
-      
+
       if (!ageValidation.valid) {
         return NextResponse.json(
           { error: ageValidation.error },
@@ -168,8 +166,8 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       console.error('Validation error details:', error.errors);
       return NextResponse.json(
-        { 
-          error: 'Validation error', 
+        {
+          error: 'Validation error',
           details: error.errors.map(e => ({
             path: e.path.join('.'),
             message: e.message,

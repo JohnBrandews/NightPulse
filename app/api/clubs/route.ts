@@ -60,24 +60,43 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const owner = searchParams.get('owner');
     const county = searchParams.get('county');
     const musicType = searchParams.get('musicType');
     const verified = searchParams.get('verified');
 
     const where: any = { isActive: true };
-    
+
+    // If fetching my clubs, allow seeing inactive/unverified ones?
+    // Let's check auth
+    const currentUser = await getCurrentUser(req);
+
+    if (owner === 'me') {
+      if (!currentUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      where.ownerId = currentUser.userId;
+      // Remove isActive constraint for own clubs so they can see pending ones
+      delete where.isActive;
+    }
+
     if (county) {
       where.county = county;
     }
-    
+
     if (musicType) {
       where.musicType = {
         contains: musicType,
       };
     }
-    
+
     if (verified === 'true') {
       where.isVerified = true;
+    } else if (owner === 'me') {
+      // If owner is me, don't enforce verified=true unless asked
+    } else {
+      // For public listing, maybe default to verified? 
+      // The existing code didn't force verified=true unless asked, but discovered page asks for it.
     }
 
     const clubs = await prisma.club.findMany({

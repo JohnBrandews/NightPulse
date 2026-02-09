@@ -6,10 +6,10 @@ import { z } from 'zod';
 const bookingSchema = z.object({
   club: z.string(),
   event: z.string().optional(),
-  bookingType: z.enum(['table', 'booth', 'general', 'dj_gig']),
-  date: z.string(),
-  time: z.string(),
-  numberOfGuests: z.number().min(1),
+  bookingType: z.enum(['table', 'booth', 'general', 'dj_gig']).default('general'),
+  date: z.string().min(1, 'Date is required'),
+  time: z.string().min(1, 'Time is required'),
+  numberOfGuests: z.preprocess((v) => (typeof v === 'string' ? parseInt(v, 10) : v), z.number().int().min(1, 'At least 1 guest')),
   specialRequests: z.string().optional(),
 });
 
@@ -21,15 +21,41 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log('Received booking request:', body);
+
     const validatedData = bookingSchema.parse(body);
+    console.log('Validated booking data:', validatedData);
+
+    // Validate club exists
+    const club = await prisma.club.findUnique({ where: { id: validatedData.club } });
+    if (!club) {
+      return NextResponse.json({ error: 'Invalid club selected' }, { status: 400 });
+    }
+
+    // If event specified, validate it exists and is active
+    let eventId: string | undefined = undefined;
+    if (validatedData.event) {
+      const ev = await prisma.event.findUnique({ where: { id: validatedData.event } });
+      if (!ev || !ev.isActive) {
+        return NextResponse.json({ error: 'Selected event is not available' }, { status: 400 });
+      }
+      eventId = ev.id;
+    }
+
+    // Normalize date input
+    const dateStr = validatedData.date;
+    const parsedDate = new Date(dateStr);
+    if (isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+    }
 
     const booking = await prisma.booking.create({
       data: {
         userId: currentUser.userId,
         clubId: validatedData.club,
-        eventId: validatedData.event,
+        eventId: eventId,
         bookingType: validatedData.bookingType,
-        date: new Date(validatedData.date),
+        date: parsedDate,
         time: validatedData.time,
         numberOfGuests: validatedData.numberOfGuests,
         specialRequests: validatedData.specialRequests,
@@ -64,6 +90,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error: any) {
+    console.error('SERVER SIDE BOOKING ERROR:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -87,10 +114,20 @@ export async function GET(req: NextRequest) {
 
     let bookings;
     if (role === 'club' || role === 'admin') {
-      // Clubs see bookings for their clubs
+      // Clubs see bookings for their clubs (scoped to their ownership)
       const clubId = searchParams.get('clubId');
-      const where: any = clubId ? { clubId } : {};
-      
+      const where: any = {};
+
+      if (role === 'club') {
+        // Scope to clubs owned by current user
+        where.club = { ownerId: currentUser.userId };
+        if (clubId) {
+          where.clubId = clubId;
+        }
+      } else if (role === 'admin') {
+        if (clubId) where.clubId = clubId;
+      }
+
       bookings = await prisma.booking.findMany({
         where,
         include: {

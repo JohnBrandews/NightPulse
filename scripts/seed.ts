@@ -18,12 +18,12 @@ async function seed() {
     // console.log('Cleared existing data');
 
     // Create admin user
-    const adminPassword = await hashPassword('admin123');
+    const adminPassword = await hashPassword('Admin123');
     const admin = await prisma.user.upsert({
-      where: { email: 'admin@nightpulse.com' },
+      where: { email: 'nightpulse@gmail.com' },
       update: {},
       create: {
-        email: 'admin@nightpulse.com',
+        email: 'nightpulse@gmail.com',
         password: adminPassword,
         name: 'Admin User',
         role: 'admin',
@@ -36,7 +36,7 @@ async function seed() {
 
     // Create regular users
     const userPassword = await hashPassword('user123');
-    
+
     const john = await prisma.user.upsert({
       where: { email: 'john@example.com' },
       update: {},

@@ -15,6 +15,7 @@ model User {
   email                 String   @unique
   password              String?
   name                  String
+  phone                 String?
   role                  String   // 'user' | 'club' | 'promoter' | 'dj' | 'admin'
   gender                String?  // 'male' | 'female' | 'other'
   lookingFor            String?  // 'men' | 'women' | 'both'
@@ -51,7 +52,7 @@ model User {
   bookings              Booking[]
   sentMessages          Message[]        @relation("MessageSender")
   receivedMessages      Message[]        @relation("MessageRecipient")
-  djGigApplications     DJGigApplication[]
+  applications          Application[]
   promotedEvents        Event[]           @relation("EventPromoter")
   djEvents              Event[]           @relation("EventDJ")
 
@@ -86,7 +87,7 @@ model Club {
   // Relations
   events        Event[]
   bookings      Booking[]
-  djGigApplications DJGigApplication[]
+  gigs          Gig[]
 
   @@index([county])
   @@index([isVerified])
@@ -113,15 +114,39 @@ model Event {
   image           String?
   isFeatured      Boolean  @default(false)
   isActive        Boolean  @default(true)
+  status          String   @default("active") // 'active' | 'cancelled' | 'completed'
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  
+  // New fields for hiring
+  needsDj         Boolean  @default(false)
+  needsPromoter   Boolean  @default(false)
 
   // Relations
   bookings        Booking[]
+  applications    Application[]
 
   @@index([clubId])
   @@index([date])
   @@index([isFeatured])
+}
+
+model Gig {
+  id          String   @id @default(cuid())
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id])
+  title       String
+  description String
+  role        String   // 'dj' | 'promoter' | 'both'
+  status      String   @default("open") // 'open' | 'closed'
+  budget      String?
+  requirements String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications Application[]
+
+  @@index([clubId])
 }
 
 model Booking {
@@ -156,7 +181,7 @@ model Message {
   recipientId   String
   recipient     User     @relation("MessageRecipient", fields: [recipientId], references: [id])
   content       String
-  type          String   @default("message") // 'message' | 'club_invite'
+  type          String   @default("message") // 'message' | 'club_invite' | 'application_update'
   relatedClubId String?
   relatedEventId String?
   isRead        Boolean  @default(false)
@@ -170,19 +195,33 @@ model Message {
   @@index([isRead])
 }
 
-model DJGigApplication {
-  id        String   @id @default(cuid())
-  djId      String
-  dj        User     @relation(fields: [djId], references: [id])
-  clubId    String
-  club      Club     @relation(fields: [clubId], references: [id])
-  eventId   String?
-  message   String?
-  status    String   @default("pending") // 'pending' | 'accepted' | 'rejected'
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Application {
+  id          String   @id @default(cuid())
+  applicantId String
+  applicant   User     @relation(fields: [applicantId], references: [id])
+  
+  // Application can be for an Event OR a Gig
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+  
+  gigId       String?
+  gig         Gig?     @relation(fields: [gigId], references: [id])
 
-  @@index([djId])
-  @@index([clubId])
+  message     String?
+  status      String   @default("pending") // 'pending' | 'accepted' | 'rejected'
+  
+  // Detailed application fields
+  name             String?
+  email            String?
+  phone            String?
+  musicLinks       String? // JSON array? Or just string for now?
+  salaryExpectation String? // "10000" (KES)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([applicantId])
+  @@index([eventId])
+  @@index([gigId])
   @@index([status])
 }

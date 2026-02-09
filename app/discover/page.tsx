@@ -34,7 +34,7 @@ export default function DiscoverPage() {
       } else {
         const params = new URLSearchParams();
         if (filters.county) params.append('county', filters.county);
-        params.append('verified', 'true');
+        // params.append('verified', 'true'); // Show all active clubs for now
 
         const res = await fetch(`/api/clubs?${params}`);
         const data = await res.json();
@@ -57,21 +57,19 @@ export default function DiscoverPage() {
         <div className="flex space-x-4 mb-6 border-b border-night-lighter">
           <button
             onClick={() => setActiveTab('people')}
-            className={`pb-4 px-4 font-semibold transition-colors ${
-              activeTab === 'people'
+            className={`pb-4 px-4 font-semibold transition-colors ${activeTab === 'people'
                 ? 'text-accent-primary border-b-2 border-accent-primary'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             People
           </button>
           <button
             onClick={() => setActiveTab('clubs')}
-            className={`pb-4 px-4 font-semibold transition-colors ${
-              activeTab === 'clubs'
+            className={`pb-4 px-4 font-semibold transition-colors ${activeTab === 'clubs'
                 ? 'text-accent-primary border-b-2 border-accent-primary'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             Clubs
           </button>
@@ -132,7 +130,7 @@ export default function DiscoverPage() {
         {activeTab === 'people' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {users.map((user) => (
-              <div key={user._id} className="card">
+              <div key={user.id} className="card">
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-16 h-16 rounded-full bg-night-lighter flex items-center justify-center">
                     {user.profileImage ? (
@@ -153,7 +151,7 @@ export default function DiscoverPage() {
                 </div>
                 {user.bio && <p className="text-gray-300 text-sm mb-4">{user.bio}</p>}
                 <Link
-                  href={`/profile/${user._id || user.id}`}
+                  href={`/profile/${user.id}`}
                   className="btn-primary w-full block text-center"
                 >
                   View Profile
@@ -171,7 +169,7 @@ export default function DiscoverPage() {
         {activeTab === 'clubs' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {clubs.map((club) => (
-              <div key={club._id} className="card">
+              <div key={club.id} className="card">
                 <div className="mb-4">
                   <h3 className="font-semibold text-xl mb-2">{club.name}</h3>
                   <p className="text-gray-400 text-sm flex items-center mb-2">
@@ -195,7 +193,7 @@ export default function DiscoverPage() {
                   <p className="text-gray-300 text-sm mb-4 line-clamp-2">{club.description}</p>
                 )}
                 <Link
-                  href={`/clubs/${club._id}`}
+                  href={`/clubs/${club.id}`}
                   className="btn-primary w-full block text-center"
                 >
                   View Club

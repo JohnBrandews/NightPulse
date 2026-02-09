@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Layout from '@/components/Layout';
-import { FiMapPin, FiMessageCircle, FiCalendar } from 'react-icons/fi';
+import { FiMapPin, FiMessageCircle, FiCalendar, FiCheckCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
@@ -22,7 +22,17 @@ export default function ProfilePage() {
     try {
       const res = await fetch(`/api/users/${params.id as string}`);
       const data = await res.json();
-      setProfile(data.user);
+      const user = data.user;
+      if (user) {
+        // Parse JSON strings if necessary
+        try {
+          if (typeof user.djGenre === 'string') user.djGenre = JSON.parse(user.djGenre);
+          if (typeof user.djMusicLinks === 'string') user.djMusicLinks = JSON.parse(user.djMusicLinks);
+        } catch (e) {
+          console.error("Error parsing profile JSON", e);
+        }
+      }
+      setProfile(user);
     } catch (error) {
       console.error('Failed to load profile:', error);
     }
@@ -46,10 +56,10 @@ export default function ProfilePage() {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    recipient: profile.id,
-                    content: messageContent,
-                  }),
+        body: JSON.stringify({
+          recipient: profile.id,
+          content: messageContent,
+        }),
       });
 
       const data = await res.json();
@@ -79,7 +89,7 @@ export default function ProfilePage() {
     );
   }
 
-    const isOwnProfile = currentUser && (currentUser.id === profile.id);
+  const isOwnProfile = currentUser && (currentUser.id === profile.id);
 
   return (
     <Layout>
@@ -98,7 +108,7 @@ export default function ProfilePage() {
               )}
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{profile.name}</h1>
+              <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">{profile.name} {profile.isVerified && (<FiCheckCircle className="w-5 h-5 text-blue-500" title="Verified" />)}</h1>
               {profile.city && (
                 <p className="text-gray-400 flex items-center mb-2">
                   <FiMapPin className="w-4 h-4 mr-1" />
@@ -169,7 +179,7 @@ export default function ProfilePage() {
             <h2 className="text-xl font-semibold mb-4">DJ Profile</h2>
             {profile.djName && <p className="text-gray-300 mb-2">DJ Name: {profile.djName}</p>}
             {profile.djGenre && profile.djGenre.length > 0 && (
-              <div className="mb-2">
+              <div className="mb-4">
                 <p className="text-gray-400 text-sm mb-2">Genres:</p>
                 <div className="flex flex-wrap gap-2">
                   {profile.djGenre.map((genre: string, idx: number) => (
@@ -183,7 +193,33 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
-            {profile.djBio && <p className="text-gray-300 mt-2">{profile.djBio}</p>}
+
+            {profile.djMusicLinks && profile.djMusicLinks.length > 0 && (
+              <div className="mb-4">
+                <p className="text-gray-400 text-sm mb-2">Music & Video Links:</p>
+                <div className="space-y-2">
+                  {profile.djMusicLinks.map((link: string, idx: number) => (
+                    <a
+                      key={idx}
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block p-3 bg-gray-800 rounded hover:bg-gray-700 transition flex items-center text-accent-secondary truncate"
+                    >
+                      <FiMusic className="mr-2 flex-shrink-0" />
+                      <span className="truncate">{link}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profile.djBio && (
+              <div>
+                <p className="text-gray-400 text-sm mb-1">DJ Bio:</p>
+                <p className="text-gray-300">{profile.djBio}</p>
+              </div>
+            )}
           </div>
         )}
       </div>
