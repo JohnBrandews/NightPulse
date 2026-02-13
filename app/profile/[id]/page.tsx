@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Layout from '@/components/Layout';
-import { FiMapPin, FiMessageCircle, FiCalendar, FiCheckCircle } from 'react-icons/fi';
+import { FiMapPin, FiMessageCircle, FiCalendar, FiCheckCircle, FiMusic } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
@@ -23,15 +23,6 @@ export default function ProfilePage() {
       const res = await fetch(`/api/users/${params.id as string}`);
       const data = await res.json();
       const user = data.user;
-      if (user) {
-        // Parse JSON strings if necessary
-        try {
-          if (typeof user.djGenre === 'string') user.djGenre = JSON.parse(user.djGenre);
-          if (typeof user.djMusicLinks === 'string') user.djMusicLinks = JSON.parse(user.djMusicLinks);
-        } catch (e) {
-          console.error("Error parsing profile JSON", e);
-        }
-      }
       setProfile(user);
     } catch (error) {
       console.error('Failed to load profile:', error);
@@ -175,52 +166,94 @@ export default function ProfilePage() {
         )}
 
         {profile.role === 'dj' && (
-          <div className="card mb-6">
-            <h2 className="text-xl font-semibold mb-4">DJ Profile</h2>
-            {profile.djName && <p className="text-gray-300 mb-2">DJ Name: {profile.djName}</p>}
-            {profile.djGenre && profile.djGenre.length > 0 && (
-              <div className="mb-4">
-                <p className="text-gray-400 text-sm mb-2">Genres:</p>
-                <div className="flex flex-wrap gap-2">
-                  {profile.djGenre.map((genre: string, idx: number) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full"
-                    >
-                      {genre}
-                    </span>
-                  ))}
+          <>
+            <div className="card mb-6">
+              <h2 className="text-xl font-semibold mb-4">DJ Information</h2>
+              {profile.djName && <p className="text-gray-300 mb-2"><strong>DJ Name:</strong> {profile.djName}</p>}
+              {profile.djGenre && profile.djGenre.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-gray-400 text-sm mb-2 font-semibold">Genres:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.djGenre.map((genre: string, idx: number) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-sm"
+                      >
+                        {genre}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+              {profile.djBio && (
+                <div>
+                  <p className="text-gray-400 text-sm mb-1 font-semibold">About:</p>
+                  <p className="text-gray-300">{profile.djBio}</p>
+                </div>
+              )}
+            </div>
 
             {profile.djMusicLinks && profile.djMusicLinks.length > 0 && (
-              <div className="mb-4">
-                <p className="text-gray-400 text-sm mb-2">Music & Video Links:</p>
-                <div className="space-y-2">
-                  {profile.djMusicLinks.map((link: string, idx: number) => (
-                    <a
-                      key={idx}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block p-3 bg-gray-800 rounded hover:bg-gray-700 transition flex items-center text-accent-secondary truncate"
-                    >
-                      <FiMusic className="mr-2 flex-shrink-0" />
-                      <span className="truncate">{link}</span>
-                    </a>
-                  ))}
+              <div className="card mb-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                  <span className="text-neon-pink text-3xl">🎵</span>
+                  My Work & Music
+                </h2>
+                <div className="space-y-4">
+                  {profile.djMusicLinks.map((link: string, idx: number) => {
+                    // Check if it's a YouTube link
+                    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/)([a-zA-Z0-9_-]{11})/;
+                    const youtubeMatch = link.match(youtubeRegex);
+                    const videoId = youtubeMatch ? youtubeMatch[1] : null;
+
+                    return (
+                      <div key={idx} className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700 transition">
+                        {videoId ? (
+                          <>
+                            <iframe
+                              width="100%"
+                              height="250"
+                              src={`https://www.youtube.com/embed/${videoId}`}
+                              title={`DJ Performance ${idx + 1}`}
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="w-full"
+                            ></iframe>
+                            <div className="p-3">
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-accent-secondary hover:text-accent-primary text-sm font-medium flex items-center"
+                              >
+                                <FiMusic className="mr-2 flex-shrink-0" />
+                                Watch on YouTube
+                              </a>
+                            </div>
+                          </>
+                        ) : (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block p-4 text-accent-secondary hover:text-accent-primary transition flex items-center"
+                          >
+                            <FiMusic className="mr-3 flex-shrink-0" />
+                            <div className="flex-1 truncate">
+                              <p className="text-sm font-medium truncate">{link.split('/').pop() || link}</p>
+                              <p className="text-xs text-gray-400">Click to open</p>
+                            </div>
+                            →
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
-
-            {profile.djBio && (
-              <div>
-                <p className="text-gray-400 text-sm mb-1">DJ Bio:</p>
-                <p className="text-gray-300">{profile.djBio}</p>
-              </div>
-            )}
-          </div>
+          </>
         )}
       </div>
     </Layout>

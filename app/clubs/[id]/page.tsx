@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Layout from '@/components/Layout';
-import { FiMapPin, FiMusic, FiUsers, FiCalendar, FiCheckCircle } from 'react-icons/fi';
+import { FiMapPin, FiMusic, FiUsers, FiCalendar, FiCheckCircle, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ClubDetailPage() {
   const params = useParams();
   const [club, setClub] = useState<any>(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [showMessageForm, setShowMessageForm] = useState(false);
+  const [messageContent, setMessageContent] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [bookingData, setBookingData] = useState({
     date: '',
     time: '',
@@ -20,7 +23,18 @@ export default function ClubDetailPage() {
 
   useEffect(() => {
     loadClub();
+    loadCurrentUser();
   }, [params.id]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.user) setCurrentUser(data.user);
+    } catch (error) {
+      console.error('Failed to load current user:', error);
+    }
+  };
 
   const loadClub = async () => {
     try {
@@ -71,6 +85,38 @@ export default function ClubDetailPage() {
           specialRequests: '',
         });
       } else {
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    }
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageContent.trim() || !club?.ownerId) return;
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient: club.ownerId,
+          content: messageContent,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('Message sent!');
+        setMessageContent('');
+        setShowMessageForm(false);
+      } else {
+        if (res.status === 401) {
+          toast.error('Please log in to send a message');
+          return;
+        }
+        toast.error(data.error || 'Failed to send message');
       }
     } catch (error) {
       toast.error('An error occurred');
@@ -178,12 +224,21 @@ export default function ClubDetailPage() {
             <div className="card">
               <h2 className="text-xl font-semibold mb-4">Book a Reservation</h2>
               {!showBookingForm ? (
-                <button
-                  onClick={() => setShowBookingForm(true)}
-                  className="btn-primary w-full"
-                >
-                  Make a Booking
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setShowBookingForm(true)}
+                    className="btn-primary w-full"
+                  >
+                    Make a Booking
+                  </button>
+                  <button
+                    onClick={() => setShowMessageForm(!showMessageForm)}
+                    className="btn-secondary w-full flex items-center justify-center"
+                  >
+                    <FiMessageCircle className="w-4 h-4 mr-2" />
+                    Message Club
+                  </button>
+                </div>
               ) : (
                 <form onSubmit={handleBooking} className="space-y-4">
                   <div>
@@ -260,6 +315,34 @@ export default function ClubDetailPage() {
                 </form>
               )}
             </div>
+
+            {showMessageForm && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-4">Message Club</h2>
+                <form onSubmit={sendMessage} className="space-y-4">
+                  <textarea
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
+                    className="input-field"
+                    rows={4}
+                    placeholder="Type your message..."
+                    required
+                  />
+                  <div className="flex space-x-2">
+                    <button type="submit" className="btn-primary flex-1">
+                      Send Message
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowMessageForm(false)}
+                      className="btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </div>

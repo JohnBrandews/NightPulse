@@ -56,10 +56,15 @@ model User {
   promotedEvents        Event[]           @relation("EventPromoter")
   djEvents              Event[]           @relation("EventDJ")
 
+  // Online status fields
+  lastActive    DateTime @default(now())
+  isOnline      Boolean  @default(false)
+
   @@index([email])
   @@index([role])
   @@index([county])
   @@index([isActive])
+  @@index([isOnline])
 }
 
 model Club {
@@ -184,7 +189,10 @@ model Message {
   type          String   @default("message") // 'message' | 'club_invite' | 'application_update'
   relatedClubId String?
   relatedEventId String?
-  isRead        Boolean  @default(false)
+  
+  // Message status (like WhatsApp ticks)
+  status        String   @default("sent") // 'sent' | 'delivered' | 'read'
+  
   isModerated   Boolean  @default(false)
   isBlocked     Boolean  @default(false)
   createdAt     DateTime @default(now())
@@ -192,7 +200,7 @@ model Message {
 
   @@index([senderId])
   @@index([recipientId])
-  @@index([isRead])
+  @@index([status])
 }
 
 model Application {

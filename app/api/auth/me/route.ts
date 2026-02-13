@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
         idVerificationStatus: true,
         clubName: true,
         djName: true,
+        djMusicLinks: true,
         createdAt: true,
       },
     });
@@ -40,6 +41,15 @@ export async function GET(req: NextRequest) {
         { error: 'User not found' },
         { status: 404 }
       );
+    }
+
+    // Parse djMusicLinks if it's a DJ
+    if (user.djMusicLinks) {
+      try {
+        user.djMusicLinks = JSON.parse(user.djMusicLinks);
+      } catch (e) {
+        user.djMusicLinks = [];
+      }
     }
 
     return NextResponse.json({ user });

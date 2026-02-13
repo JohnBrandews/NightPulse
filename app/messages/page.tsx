@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
-import { FiSend, FiMessageCircle } from 'react-icons/fi';
+import { FiSend, FiMessageCircle, FiCheck, FiCheckCircle, FiCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function MessagesPage() {
@@ -11,16 +11,44 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [messageContent, setMessageContent] = useState('');
   const [recipient, setRecipient] = useState<any>(null);
+  const [recipientOnline, setRecipientOnline] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadConversations();
+    sendHeartbeat();
+    heartbeatInterval.current = setInterval(sendHeartbeat, 30000); // Every 30 seconds
+
+    return () => {
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation);
+      checkOnlineStatus(selectedConversation);
     }
   }, [selectedConversation]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const sendHeartbeat = async () => {
+    try {
+      await fetch('/api/users/online', { method: 'POST' });
+    } catch (error) {
+      console.error('Heartbeat failed:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const loadConversations = async () => {
     try {
@@ -38,18 +66,47 @@ export default function MessagesPage() {
       const data = await res.json();
       setMessages(data.messages || []);
       
-      // Find recipient info from conversations or from messages
+      // Mark messages as read
+      const unreadMessages = data.messages?.filter((m: any) => 
+        (m.sender?.id === userId || m.sender?._id === userId) && 
+        m.status !== 'read'
+      ) || [];
+      
+      if (unreadMessages.length > 0) {
+        await fetch('/api/messages/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ senderId: userId }),
+        });
+        loadConversations(); // Refresh to update unread count
+      }
+      
+      // Find recipient info from conversations
       const conv = conversations.find((c: any) => c.user?._id === userId || c.user?.id === userId);
       if (conv) {
         setRecipient(conv.user);
       } else if (data.messages && data.messages.length > 0) {
-        // Get recipient from first message
         const firstMsg = data.messages[0];
         const recipientId = firstMsg.sender?._id === userId ? firstMsg.recipient : firstMsg.sender;
         if (recipientId) setRecipient(recipientId);
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
+    }
+  };
+
+  const checkOnlineStatus = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/online?ids=${userId}`);
+      const data = await res.json();
+      const user = data.users?.find((u: any) => u.id === userId);
+      if (user) {
+        // Consider online if last active was within 2 minutes
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+        setRecipientOnline(user.isOnline && new Date(user.lastActive) > twoMinutesAgo);
+      }
+    } catch (error) {
+      console.error('Failed to check online status:', error);
     }
   };
 
@@ -81,6 +138,28 @@ export default function MessagesPage() {
     }
   };
 
+  // WhatsApp-style tick icons
+  const MessageStatusIcon = ({ status }: { status: string }) => {
+    if (status === 'sent') {
+      return <FiCheck className="w-4 h-4 ml-1 opacity-70" />;
+    } else if (status === 'delivered') {
+      return (
+        <span className="flex ml-1">
+          <FiCheckCircle className="w-4 h-4 -mr-2 opacity-70" />
+          <FiCheckCircle className="w-4 h-4 opacity-70" />
+        </span>
+      );
+    } else if (status === 'read') {
+      return (
+        <span className="flex ml-1 text-blue-400">
+          <FiCheckCircle className="w-4 h-4 -mr-2" />
+          <FiCheckCircle className="w-4 h-4" />
+        </span>
+      );
+    }
+    return null;
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -108,16 +187,22 @@ export default function MessagesPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-night-lighter flex items-center justify-center">
-                          {conv.user?.profileImage ? (
-                            <img
-                              src={conv.user.profileImage}
-                              alt={conv.user.name}
-                              className="w-10 h-10 rounded-full"
-                            />
-                          ) : (
-                            <FiMessageCircle className="w-5 h-5 text-gray-400" />
-                          )}
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-night-lighter flex items-center justify-center overflow-hidden">
+                            {conv.user?.profileImage ? (
+                              <img
+                                src={conv.user.profileImage}
+                                alt={conv.user.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <FiMessageCircle className="w-5 h-5 text-gray-400" />
+                            )}
+                          </div>
+                          {/* Online indicator dot */}
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-night-dark ${
+                            conv.user?.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
                         </div>
                         <div>
                           <p className="font-semibold">{conv.user?.name || 'Unknown'}</p>
@@ -146,7 +231,31 @@ export default function MessagesPage() {
             {selectedConversation ? (
               <>
                 <div className="border-b border-night-lighter pb-4 mb-4">
-                  <h3 className="font-semibold text-lg">{recipient?.name}</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-full bg-night-lighter flex items-center justify-center overflow-hidden">
+                        {recipient?.profileImage ? (
+                          <img
+                            src={recipient.profileImage}
+                            alt={recipient.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <FiMessageCircle className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                      {/* Online indicator dot */}
+                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-night-dark ${
+                        recipientOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{recipient?.name}</h3>
+                      <p className="text-sm text-gray-400">
+                        {recipientOnline ? 'Online' : 'Offline'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto space-y-4 mb-4">
@@ -154,7 +263,7 @@ export default function MessagesPage() {
                     const isFromOther = msg.sender?._id === selectedConversation || msg.sender?.id === selectedConversation;
                     return (
                       <div
-                        key={msg._id}
+                        key={msg._id || msg.id}
                         className={`flex ${isFromOther ? 'justify-start' : 'justify-end'}`}
                       >
                         <div
@@ -165,13 +274,17 @@ export default function MessagesPage() {
                           }`}
                         >
                           <p>{msg.content}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {new Date(msg.createdAt).toLocaleTimeString()}
-                          </p>
+                          <div className={`flex items-center justify-end mt-1 text-xs ${
+                            isFromOther ? 'text-gray-400' : 'text-white/70'
+                          }`}>
+                            <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                            {!isFromOther && <MessageStatusIcon status={msg.status} />}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <form onSubmit={sendMessage} className="flex space-x-2">

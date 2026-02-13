@@ -32,6 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                         county: true,
                         images: true,
                         logo: true,
+                        ownerId: true,
                     }
                 },
                 bookings: {

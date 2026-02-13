@@ -5,8 +5,9 @@ import { useParams } from 'next/navigation';
 import Layout from '@/components/Layout';
 import BookingForm from '@/components/BookingForm';
 import ApplicationForm from '@/components/ApplicationForm';
-import { FiCalendar, FiClock, FiMapPin, FiMusic, FiUsers, FiDollarSign } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiMapPin, FiMusic, FiUsers, FiDollarSign, FiMessageCircle } from 'react-icons/fi';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function EventDetailPage() {
     const params = useParams();
@@ -15,6 +16,8 @@ export default function EventDetailPage() {
     const [loading, setLoading] = useState(true);
     const [showBooking, setShowBooking] = useState(false);
     const [showApplication, setShowApplication] = useState(false);
+    const [showMessageForm, setShowMessageForm] = useState(false);
+    const [messageContent, setMessageContent] = useState('');
 
     useEffect(() => {
         // Fetch User and Event
@@ -30,6 +33,38 @@ export default function EventDetailPage() {
             setLoading(false);
         });
     }, [params.id]);
+
+    const sendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!messageContent.trim() || !event?.club?.ownerId) return;
+
+        try {
+            const res = await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipient: event.club.ownerId,
+                    content: messageContent,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success('Message sent!');
+                setMessageContent('');
+                setShowMessageForm(false);
+            } else {
+                if (res.status === 401) {
+                    toast.error('Please log in to send a message');
+                    return;
+                }
+                toast.error(data.error || 'Failed to send message');
+            }
+        } catch (error) {
+            toast.error('An error occurred');
+        }
+    };
 
     if (loading) {
         return (
@@ -189,6 +224,13 @@ export default function EventDetailPage() {
                                                 >
                                                     Book Now
                                                 </button>
+                                                <button
+                                                    onClick={() => setShowMessageForm(!showMessageForm)}
+                                                    className="btn-secondary w-full py-2 text-sm flex items-center justify-center"
+                                                >
+                                                    <FiMessageCircle className="w-4 h-4 mr-2" />
+                                                    Message Club
+                                                </button>
                                             </div>
                                         ) : showBooking ? (
                                             <div>
@@ -206,8 +248,17 @@ export default function EventDetailPage() {
                                             </div>
                                         ) : null
                                     ) : (
-                                        <div className="text-center text-gray-400">
-                                            {user.role === 'club' ? 'You are viewing this as a Club Owner.' : 'Switch to a Regular User account to make reservations.'}
+                                        <div className="space-y-4">
+                                            <div className="text-center text-gray-400 text-sm">
+                                                {user.role === 'club' ? 'You are viewing this as a Club Owner.' : 'Switch to a Regular User account to make reservations.'}
+                                            </div>
+                                            <button
+                                                onClick={() => setShowMessageForm(!showMessageForm)}
+                                                className="btn-secondary w-full py-2 text-sm flex items-center justify-center"
+                                            >
+                                                <FiMessageCircle className="w-4 h-4 mr-2" />
+                                                Message Club
+                                            </button>
                                         </div>
                                     )}
 
@@ -235,6 +286,34 @@ export default function EventDetailPage() {
                                 </div>
                             )}
                         </div>
+
+                        {showMessageForm && (
+                            <div className="card">
+                                <h3 className="text-lg font-bold mb-4">Message Club</h3>
+                                <form onSubmit={sendMessage} className="space-y-4">
+                                    <textarea
+                                        value={messageContent}
+                                        onChange={(e) => setMessageContent(e.target.value)}
+                                        className="input-field"
+                                        rows={4}
+                                        placeholder="Type your message..."
+                                        required
+                                    />
+                                    <div className="flex space-x-2">
+                                        <button type="submit" className="btn-primary flex-1 py-2">
+                                            Send Message
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMessageForm(false)}
+                                            className="btn-secondary py-2"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

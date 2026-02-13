@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { FiHome, FiSearch, FiMessageCircle, FiCalendar, FiUser, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiSearch, FiMessageCircle, FiCalendar, FiUser, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -34,8 +35,9 @@ export default function Navbar() {
             <span className="text-2xl font-bold text-gradient">NightPulse</span>
           </Link>
 
+          {/* Desktop Navigation */}
           {user ? (
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               <Link
                 href="/dashboard"
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
@@ -43,7 +45,7 @@ export default function Navbar() {
                 }`}
               >
                 <FiHome className="w-5 h-5" />
-                <span className="hidden md:inline">Dashboard</span>
+                <span>Dashboard</span>
               </Link>
 
               {user.role === 'user' && (
@@ -55,16 +57,7 @@ export default function Navbar() {
                     }`}
                   >
                     <FiSearch className="w-5 h-5" />
-                    <span className="hidden md:inline">Discover</span>
-                  </Link>
-                  <Link
-                    href="/messages"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                      pathname === '/messages' ? 'bg-accent-primary/20 text-accent-primary' : 'hover:bg-night-light'
-                    }`}
-                  >
-                    <FiMessageCircle className="w-5 h-5" />
-                    <span className="hidden md:inline">Messages</span>
+                    <span>Discover</span>
                   </Link>
                 </>
               )}
@@ -77,9 +70,19 @@ export default function Navbar() {
                   }`}
                 >
                   <FiCalendar className="w-5 h-5" />
-                  <span className="hidden md:inline">Bookings</span>
+                  <span>Bookings</span>
                 </Link>
               )}
+
+              <Link
+                href="/messages"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                  pathname === '/messages' ? 'bg-accent-primary/20 text-accent-primary' : 'hover:bg-night-light'
+                }`}
+              >
+                <FiMessageCircle className="w-5 h-5" />
+                <span>Messages</span>
+              </Link>
 
               <div className="relative">
                 <button
@@ -87,7 +90,7 @@ export default function Navbar() {
                   className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-night-light"
                 >
                   <FiUser className="w-5 h-5" />
-                  <span className="hidden md:inline">{user.name}</span>
+                  <span>{user.name}</span>
                 </button>
 
                 {isMenuOpen && (
@@ -120,7 +123,7 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               <Link href="/login" className="btn-secondary">
                 Login
               </Link>
@@ -129,7 +132,119 @@ export default function Navbar() {
               </Link>
             </div>
           )}
+
+          {/* Mobile Hamburger Button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-accent-primary hover:bg-night-light p-2 rounded-lg"
+            >
+              {isMobileMenuOpen ? (
+                <FiX className="w-6 h-6" />
+              ) : (
+                <FiMenu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden pb-4 space-y-2">
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    pathname === '/dashboard' ? 'bg-accent-primary/20 text-accent-primary' : 'hover:bg-night-light'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <FiHome className="w-5 h-5" />
+                  <span>Dashboard</span>
+                </Link>
+
+                {user.role === 'user' && (
+                  <>
+                    <Link
+                      href="/discover"
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                        pathname === '/discover' ? 'bg-accent-primary/20 text-accent-primary' : 'hover:bg-night-light'
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <FiSearch className="w-5 h-5" />
+                      <span>Discover</span>
+                    </Link>
+                  </>
+                )}
+
+                {(user.role === 'club' || user.role === 'promoter') && (
+                  <Link
+                    href="/bookings"
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                      pathname === '/bookings' ? 'bg-accent-primary/20 text-accent-primary' : 'hover:bg-night-light'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <FiCalendar className="w-5 h-5" />
+                    <span>Bookings</span>
+                  </Link>
+                )}
+
+                <Link
+                  href="/messages"
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    pathname === '/messages' ? 'bg-accent-primary/20 text-accent-primary' : 'hover:bg-night-light'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <FiMessageCircle className="w-5 h-5" />
+                  <span>Messages</span>
+                </Link>
+
+                <div className="border-t border-night-lighter pt-2 mt-2">
+                  <Link
+                    href={`/profile/${user.id}`}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-night-light transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <FiUser className="w-5 h-5" />
+                    <span>{user.name}</span>
+                  </Link>
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2 hover:bg-night-light transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-night-light transition-colors flex items-center space-x-2"
+                  >
+                    <FiLogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Link href="/login" className="btn-secondary w-full text-center">
+                  Login
+                </Link>
+                <Link href="/register" className="btn-primary w-full text-center">
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );

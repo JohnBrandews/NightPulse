@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { FiCheck, FiX, FiTrash2, FiClock, FiCheckCircle } from 'react-icons/fi';
 
@@ -265,25 +266,66 @@ export default function ClubManagePage() {
                                             {app.salaryExpectation && <p className="text-sm text-gray-400">Salary: {app.salaryExpectation}</p>}
                                             {app.phone && <p className="text-sm text-gray-400">Phone: {app.phone}</p>}
                                             {app.message && <p className="text-xs text-gray-500 mt-2 italic">"{app.message}"</p>}
+                                            {/* DJ Music Links Preview */}
+                                            {app.applicant.role === 'dj' && app.applicant.djMusicLinks && (() => {
+                                                let musicLinks: string[] = [];
+                                                try {
+                                                    const parsed = JSON.parse(app.applicant.djMusicLinks);
+                                                    musicLinks = Array.isArray(parsed) ? parsed : [];
+                                                } catch (e) {
+                                                    musicLinks = [];
+                                                }
+                                                return musicLinks.length > 0 ? (
+                                                    <div className="mt-3 pt-3 border-t border-gray-700">
+                                                        <p className="text-xs text-gray-400 mb-2">Music Portfolio: {musicLinks.length} track(s)</p>
+                                                        <div className="flex gap-2 flex-wrap">
+                                                            {musicLinks.slice(0, 3).map((link: string, idx: number) => (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={link}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-xs px-2 py-1 bg-accent-primary/20 text-accent-primary rounded hover:bg-accent-primary/30 truncate"
+                                                                >
+                                                                    Work {idx + 1}
+                                                                </a>
+                                                            ))}
+                                                            {musicLinks.length > 3 && (
+                                                                <span className="text-xs px-2 py-1 bg-gray-800 text-gray-400 rounded">
+                                                                    +{musicLinks.length - 3} more
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : null;
+                                            })()}
                                         </div>
-                                        {app.status === 'pending' && (
-                                            <div className="flex space-x-3">
-                                                <button
-                                                    onClick={() => handleApplicationAction(app.id, 'accepted')}
-                                                    className="p-2 rounded-full bg-green-600/20 text-green-500 hover:bg-green-600/30"
-                                                    title="Accept"
-                                                >
-                                                    <FiCheck size={20} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleApplicationAction(app.id, 'rejected')}
-                                                    className="p-2 rounded-full bg-red-600/20 text-red-500 hover:bg-red-600/30"
-                                                    title="Reject"
-                                                >
-                                                    <FiX size={20} />
-                                                </button>
-                                            </div>
-                                        )}
+                                        <div className="flex gap-3 items-center">
+                                            <Link
+                                                href={`/profile/${app.applicant.id}`}
+                                                className="px-4 py-2 bg-accent-primary/20 text-accent-primary rounded hover:bg-accent-primary/30 text-sm font-medium transition"
+                                            >
+                                                View Profile
+                                            </Link>
+                                            {app.status === 'pending' && (
+                                                <div className="flex space-x-3">
+                                                    <button
+                                                        onClick={() => handleApplicationAction(app.id, 'accepted')}
+                                                        className="p-2 rounded-full bg-green-600/20 text-green-500 hover:bg-green-600/30"
+                                                        title="Accept"
+                                                    >
+                                                        <FiCheck size={20} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleApplicationAction(app.id, 'rejected')}
+                                                        className="p-2 rounded-full bg-red-600/20 text-red-500 hover:bg-red-600/30"
+                                                        title="Reject"
+                                                    >
+                                                        <FiX size={20} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                                 {data.applications.length === 0 && <p className="text-gray-500">No applications found.</p>}

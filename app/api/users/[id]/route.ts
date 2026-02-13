@@ -23,6 +23,7 @@ export async function GET(
         djName: true,
         djGenre: true,
         djBio: true,
+        djMusicLinks: true,
         createdAt: true,
       },
     });
@@ -36,6 +37,7 @@ export async function GET(
       ...user,
       images: user.images ? JSON.parse(user.images) : [],
       djGenre: user.djGenre ? JSON.parse(user.djGenre) : [],
+      djMusicLinks: user.djMusicLinks ? JSON.parse(user.djMusicLinks) : [],
     };
 
     return NextResponse.json({ user: userWithParsedData });

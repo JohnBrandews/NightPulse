@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
-import { FiUsers, FiCalendar, FiMessageCircle, FiTrendingUp } from 'react-icons/fi';
+import { FiUsers, FiCalendar, FiMessageCircle, FiTrendingUp, FiMusic } from 'react-icons/fi';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -49,10 +49,22 @@ export default function DashboardPage() {
           clubs: clubsData.clubs || []
         });
       } else if (userData.role === 'dj' || userData.role === 'promoter') {
-        const appsRes = await fetch('/api/applications'); // Defaults to 'my_applications'
+        const [appsRes, meRes] = await Promise.all([
+          fetch('/api/applications'),
+          fetch('/api/auth/me')
+        ]);
         const appsData = await appsRes.json();
+        const meData = await meRes.json();
+        
+        // Get music links for DJ (already parsed by /api/auth/me)
+        let musicLinks: string[] = [];
+        if (userData.role === 'dj' && meData.user?.djMusicLinks) {
+          musicLinks = Array.isArray(meData.user.djMusicLinks) ? meData.user.djMusicLinks : [];
+        }
+        
         setStats({
-          applications: appsData.applications || []
+          applications: appsData.applications || [],
+          musicLinks: musicLinks
         });
       }
     } catch (error) {
@@ -358,6 +370,85 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+
+            {/* My Work & Music Gallery */}
+            {stats.musicLinks && stats.musicLinks.length > 0 && (
+              <div className="card">
+                <div className="flex items-center gap-3 mb-6">
+                  <FiMusic className="w-6 h-6 text-neon-pink" />
+                  <h2 className="text-2xl font-bold">My Work & Music</h2>
+                  <span className="ml-auto px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-sm font-semibold">
+                    {stats.musicLinks.length} track{stats.musicLinks.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {stats.musicLinks.map((link: string, idx: number) => {
+                    // Check if it's a YouTube link
+                    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/)([a-zA-Z0-9_-]{11})/;
+                    const youtubeMatch = link.match(youtubeRegex);
+                    const videoId = youtubeMatch ? youtubeMatch[1] : null;
+
+                    return (
+                      <div key={idx} className="group">
+                        {videoId ? (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block relative overflow-hidden rounded-lg bg-gray-800 aspect-video hover:opacity-80 transition"
+                          >
+                            <img
+                              src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                              alt={`Track ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 flex items-center justify-center transition">
+                              <div className="text-white text-4xl">▶</div>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
+                              <p className="text-white text-sm font-semibold">YouTube Mix {idx + 1}</p>
+                            </div>
+                          </a>
+                        ) : (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block p-4 rounded-lg bg-gray-800 hover:bg-gray-700 transition h-full flex flex-col items-center justify-center text-center"
+                          >
+                            <FiMusic className="w-8 h-8 text-accent-primary mb-2" />
+                            <p className="text-sm font-semibold text-white truncate w-full">
+                              {link.split('/').pop() || 'Music Link'}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">Click to listen</p>
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-6 pt-4 border-t border-gray-700">
+                  <Link href="/dashboard/profile" className="btn-secondary w-full text-center">
+                    Add More Music
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {(!stats.musicLinks || stats.musicLinks.length === 0) && (
+              <div className="card bg-gradient-to-r from-accent-primary/10 to-neon-pink/10 border border-accent-primary/20">
+                <div className="flex items-center gap-4">
+                  <FiMusic className="w-12 h-12 text-neon-pink flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-1">Upload Your Music Portfolio</h3>
+                    <p className="text-sm text-gray-400">Add music links and videos to showcase your work. Club owners will see your portfolio when reviewing applications.</p>
+                  </div>
+                  <Link href="/dashboard/profile" className="btn-primary whitespace-nowrap">
+                    Upload Now
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
