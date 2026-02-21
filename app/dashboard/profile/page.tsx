@@ -31,15 +31,8 @@ export default function EditProfilePage() {
                 if (data.user) {
                     setUser(data.user);
                     // Parse JSON fields if they are strings, otherwise assume array
-                    let musicLinks = data.user.djMusicLinks || [];
-                    if (typeof musicLinks === 'string') {
-                        try { musicLinks = JSON.parse(musicLinks); } catch { musicLinks = []; }
-                    }
-
-                    let genres = data.user.djGenre || [];
-                    if (typeof genres === 'string') {
-                        try { genres = JSON.parse(genres); } catch { genres = []; }
-                    }
+                    const musicLinks = data.user.djMusicLinks || [];
+                    const genres = data.user.djGenre || [];
 
                     setFormData({
                         name: data.user.name || '',

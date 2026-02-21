@@ -49,6 +49,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
     }
 
+    // Calculate initial price if event has cover charge
+    let totalAmount = 0;
+    if (eventId) {
+      const ev = await prisma.event.findUnique({ where: { id: eventId } });
+      if (ev?.coverCharge) {
+        totalAmount = ev.coverCharge * validatedData.numberOfGuests;
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         userId: currentUser.userId,
@@ -60,6 +69,7 @@ export async function POST(req: NextRequest) {
         numberOfGuests: validatedData.numberOfGuests,
         specialRequests: validatedData.specialRequests,
         status: 'pending',
+        totalAmount: totalAmount > 0 ? totalAmount : undefined,
       },
       include: {
         user: {

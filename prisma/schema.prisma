@@ -50,6 +50,7 @@ model User {
   // Relations
   ownedClubs            Club[]           @relation("ClubOwner")
   bookings              Booking[]
+  invoices              Invoice[]
   sentMessages          Message[]        @relation("MessageSender")
   receivedMessages      Message[]        @relation("MessageRecipient")
   applications          Application[]
@@ -59,6 +60,10 @@ model User {
   // Online status fields
   lastActive    DateTime @default(now())
   isOnline      Boolean  @default(false)
+
+  // Password Reset fields
+  resetToken       String?  @unique
+  resetTokenExpiry DateTime?
 
   @@index([email])
   @@index([role])
@@ -93,6 +98,7 @@ model Club {
   events        Event[]
   bookings      Booking[]
   gigs          Gig[]
+  invoices      Invoice[]
 
   @@index([county])
   @@index([isVerified])
@@ -174,6 +180,9 @@ model Booking {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Relations
+  invoice         Invoice?
+
   @@index([userId])
   @@index([clubId])
   @@index([status])
@@ -232,4 +241,48 @@ model Application {
   @@index([eventId])
   @@index([gigId])
   @@index([status])
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  clubId          String
+  club            Club     @relation(fields: [clubId], references: [id])
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // Invoice details
+  invoiceNumber   String   @unique
+  clientName      String
+  clientEmail     String
+  clientPhone     String?
+  
+  // Dates
+  issueDate       DateTime @default(now())
+  dueDate         DateTime
+  
+  // Amount in KES
+  subtotal        Float    @default(0)
+  tax             Float    @default(0)
+  totalAmount     Float    @default(0)
+  
+  // Status: pending, paid, overdraft
+  status          String   @default("pending")
+  paymentStatus   String   @default("pending") // pending, paid, overdue
+  
+  // Notes
+  notes           String?
+  
+  // Email sent tracking
+  emailSent       Boolean  @default(false)
+  emailSentAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clubId])
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
 }

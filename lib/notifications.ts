@@ -24,7 +24,7 @@ export async function createNotification({
                 type,
                 relatedClubId,
                 relatedEventId,
-                isRead: false,
+                status: 'sent',
             },
         });
         return notification;

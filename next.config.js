@@ -12,6 +12,23 @@ const nextConfig = {
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   },
+  experimental: {
+    // Next.js 14: keep these packages out of the webpack bundle so they can
+    // resolve their font/worker assets from node_modules at runtime.
+    serverComponentsExternalPackages: ['@react-pdf/renderer'],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+        canvas: false,
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { broadcastStatusUpdate } from '../stream/utils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +25,15 @@ export async function POST(req: NextRequest) {
           status: 'read',
         },
       });
+      // Broadcast status update to senders
+      const messages = await prisma.message.findMany({
+        where: { id: { in: messageIds } },
+        select: { senderId: true },
+      });
+      const senderIds = Array.from(new Set(messages.map(m => m.senderId)));
+      for (const senderId of senderIds) {
+        await broadcastStatusUpdate(senderId, messageIds, 'read');
+      }
     }
 
     // Mark all messages from a specific sender as read
@@ -38,6 +48,8 @@ export async function POST(req: NextRequest) {
           status: 'read',
         },
       });
+      // Broadcast status update to sender
+      await broadcastStatusUpdate(senderId, [], 'read');
     }
 
     return NextResponse.json({ success: true });

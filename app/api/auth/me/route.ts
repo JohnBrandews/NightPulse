@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser(req);
-    
+
     if (!currentUser) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -31,11 +31,12 @@ export async function GET(req: NextRequest) {
         idVerificationStatus: true,
         clubName: true,
         djName: true,
+        djGenre: true,
         djMusicLinks: true,
         createdAt: true,
       },
     });
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -43,16 +44,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Parse djMusicLinks if it's a DJ
-    if (user.djMusicLinks) {
-      try {
-        user.djMusicLinks = JSON.parse(user.djMusicLinks);
-      } catch (e) {
-        user.djMusicLinks = [];
-      }
-    }
+    // Parse JSON fields
+    const userWithParsedData = {
+      ...user,
+      djGenre: user.djGenre ? JSON.parse(user.djGenre) : [],
+      djMusicLinks: user.djMusicLinks ? JSON.parse(user.djMusicLinks) : [],
+    };
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user: userWithParsedData });
   } catch (error) {
     console.error('Get user error:', error);
     return NextResponse.json(

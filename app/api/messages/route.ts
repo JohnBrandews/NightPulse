@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { moderateContent } from '@/lib/utils/contentModeration';
+import { broadcastMessage } from './stream/utils';
 import { z } from 'zod';
 
 const messageSchema = z.object({
@@ -58,6 +59,9 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    // Broadcast the new message to the recipient in real-time
+    await broadcastMessage(validatedData.recipient, message);
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error: any) {
@@ -166,18 +170,19 @@ export async function GET(req: NextRequest) {
 
       receivedMessages.forEach(msg => {
         const otherUserId = msg.sender.id;
+        const isUnread = msg.status !== 'read';
         if (!conversations.has(otherUserId)) {
           conversations.set(otherUserId, {
             user: msg.sender,
             lastMessage: msg,
-            unread: msg.isRead ? 0 : 1,
+            unread: isUnread ? 1 : 0,
           });
         } else {
           const conv = conversations.get(otherUserId);
           if (msg.createdAt > conv.lastMessage.createdAt) {
             conv.lastMessage = msg;
           }
-          if (!msg.isRead) {
+          if (isUnread) {
             conv.unread += 1;
           }
         }

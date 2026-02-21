@@ -19,7 +19,8 @@ export default function ApplicationForm({ event, gig, currentUser, onSuccess }: 
             email: currentUser?.email || '',
             phone: currentUser?.phone || '',
             musicLinks: currentUser?.djMusicLinks || '', // Basic heuristic
-            salaryExpectation: ''
+            salaryExpectation: '',
+            message: ''
         }
     });
     const [submitting, setSubmitting] = useState(false);

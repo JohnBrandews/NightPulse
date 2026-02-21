@@ -27,6 +27,15 @@ async function main() {
     const apps = await prisma.application.findMany();
     console.log('Total Applications:', apps.length);
 
+    // Check DJs
+    const djs = await prisma.user.findMany({ where: { role: 'dj' } });
+    console.log('Total DJs:', djs.length);
+    djs.forEach(dj => {
+        console.log(`DJ: ${dj.name} (${dj.id})`);
+        console.log(`  Genre: ${dj.djGenre}`);
+        console.log(`  Links: ${dj.djMusicLinks}`);
+    });
+
     await prisma.$disconnect();
 }
 

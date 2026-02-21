@@ -7,7 +7,7 @@ import { KENYA_COUNTIES } from '@/lib/kenya-counties';
 const clubSchema = z.object({
   name: z.string().min(2),
   address: z.string().min(5),
-  county: z.enum(KENYA_COUNTIES as [string, ...string[]]),
+  county: z.enum([...KENYA_COUNTIES] as [string, ...string[]]),
   musicType: z.array(z.string()),
   dressCode: z.string(),
   capacity: z.number().min(1),
