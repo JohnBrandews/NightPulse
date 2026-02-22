@@ -15,6 +15,9 @@ const clubUpdateSchema = z.object({
   website: z.string().url().optional().or(z.literal('')).optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')).optional(),
+  tablePrice: z.number().min(0).optional(),
+  boothPrice: z.number().min(0).optional(),
+  generalPrice: z.number().min(0).optional(),
 });
 
 export async function PATCH(

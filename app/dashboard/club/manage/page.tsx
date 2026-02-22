@@ -596,95 +596,185 @@ export default function ClubManagePage() {
                         )}
 
                         {activeTab === 'analytics' && analytics && (
-                            <div className="space-y-6">
-                                {/* Revenue Overview */}
+                            <div className="space-y-8">
+                                {/* Revenue Overview Cards */}
                                 <div className="grid md:grid-cols-3 gap-6">
-                                    <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-700/50 p-6 rounded-xl">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <FiDollarSign className="text-green-400 text-2xl" />
-                                            <p className="text-green-400 text-sm font-medium">Total Revenue</p>
+                                    <div className="card-glass border-green-500/30 p-6 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-gray-400 text-sm font-medium">Total Revenue</p>
+                                            <p className="text-3xl font-bold text-white mt-1">KES {analytics.totalRevenue.toLocaleString()}</p>
+                                            <p className="text-green-500 text-xs mt-1 flex items-center gap-1">
+                                                <FiCheckCircle size={12} /> {analytics.paidInvoices} paid invoices
+                                            </p>
                                         </div>
-                                        <p className="text-4xl font-bold text-green-400">KES {analytics.totalRevenue.toLocaleString()}</p>
-                                        <p className="text-gray-400 text-sm mt-2">From {analytics.paidInvoices} paid invoices</p>
+                                        <div className="p-4 bg-green-500/10 rounded-full">
+                                            <FiDollarSign className="text-green-500 text-2xl" />
+                                        </div>
                                     </div>
-                                    <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700/50 p-6 rounded-xl">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <FiBarChart2 className="text-blue-400 text-2xl" />
-                                            <p className="text-blue-400 text-sm font-medium">Avg Monthly Revenue</p>
+                                    <div className="card-glass border-blue-500/30 p-6 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-gray-400 text-sm font-medium">Avg Monthly</p>
+                                            <p className="text-3xl font-bold text-white mt-1">KES {Math.round(analytics.averageMonthlyRevenue).toLocaleString()}</p>
+                                            <p className="text-blue-500 text-xs mt-1">Based on performance</p>
                                         </div>
-                                        <p className="text-4xl font-bold text-blue-400">KES {Math.round(analytics.averageMonthlyRevenue).toLocaleString()}</p>
-                                        <p className="text-gray-400 text-sm mt-2">Based on invoice history</p>
+                                        <div className="p-4 bg-blue-500/10 rounded-full">
+                                            <FiBarChart2 className="text-blue-500 text-2xl" />
+                                        </div>
                                     </div>
-                                    <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-700/50 p-6 rounded-xl">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <FiCalendar className="text-purple-400 text-2xl" />
-                                            <p className="text-purple-400 text-sm font-medium">Total Invoices</p>
+                                    <div className="card-glass border-purple-500/30 p-6 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-gray-400 text-sm font-medium">Active Invoices</p>
+                                            <p className="text-3xl font-bold text-white mt-1">{analytics.totalInvoices}</p>
+                                            <p className="text-purple-500 text-xs mt-1">Total platform usage</p>
                                         </div>
-                                        <p className="text-4xl font-bold text-purple-400">{analytics.totalInvoices}</p>
-                                        <div className="flex gap-2 mt-2 text-xs">
-                                            <span className="text-green-400">{analytics.paidInvoices} paid</span>
-                                            <span className="text-yellow-400">• {analytics.pendingInvoices} pending</span>
-                                            <span className="text-red-400">• {analytics.overdraftInvoices} overdraft</span>
+                                        <div className="p-4 bg-purple-500/10 rounded-full">
+                                            <FiFileText className="text-purple-500 text-2xl" />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Monthly Revenue Chart */}
-                                <div className="bg-gray-900 border border-gray-800 p-6 rounded-xl">
-                                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                        <FiTrendingUp /> Monthly Revenue Trend
-                                    </h3>
-                                    <div className="h-64 flex items-end justify-between gap-2">
-                                        {analytics.monthlyData.map((data: any, idx: number) => {
-                                            const maxRevenue = Math.max(...analytics.monthlyData.map((d: any) => d.revenue));
-                                            const height = maxRevenue > 0 ? (data.revenue / maxRevenue) * 100 : 0;
-                                            return (
-                                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                                                    <div className="relative w-full">
-                                                        <div
-                                                            className="bg-gradient-to-t from-accent-primary to-accent-primary/60 rounded-t transition-all duration-300 group-hover:from-accent-primary/80 group-hover:to-accent-primary/40 cursor-pointer"
-                                                            style={{ height: `${Math.max(height, 4)}%`, minHeight: '4px' }}
-                                                        >
-                                                            <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
-                                                                KES {data.revenue.toLocaleString()}
+                                <div className="grid lg:grid-cols-2 gap-8">
+                                    {/* Monthly Revenue Bar Chart */}
+                                    <div className="card-glass p-8">
+                                        <h3 className="text-xl font-bold mb-8">Monthly Revenue</h3>
+                                        <div className="relative h-64 w-full">
+                                            {/* Y-Axis Labels */}
+                                            <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between text-[10px] text-gray-500 pr-2 border-r border-gray-800">
+                                                <span>$60k</span>
+                                                <span>$45k</span>
+                                                <span>$30k</span>
+                                                <span>$15k</span>
+                                                <span>$0k</span>
+                                            </div>
+
+                                            {/* Grid Lines & Bars */}
+                                            <div className="ml-10 h-full flex items-end justify-between gap-1 md:gap-3 relative">
+                                                {/* Background Grid Lines */}
+                                                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                                                    {[0, 1, 2, 3, 4].map(i => (
+                                                        <div key={i} className="w-full border-t border-gray-800/50 h-0"></div>
+                                                    ))}
+                                                </div>
+
+                                                {analytics.monthlyData.map((d: any, idx: number) => {
+                                                    const maxRef = 60000; // matching scale labels visually
+                                                    const height = Math.min((d.revenue / maxRef) * 100, 100);
+                                                    return (
+                                                        <div key={idx} className="flex-1 flex flex-col items-center group relative h-[calc(100%-32px)] justify-end">
+                                                            <div
+                                                                className="w-full bg-[#f39c12] rounded-t-sm transition-all duration-500 hover:bg-[#e67e22] cursor-pointer relative"
+                                                                style={{ height: `${Math.max(height, 2)}%` }}
+                                                            >
+                                                                {/* Tooltip */}
+                                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-700 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                                                    KES {d.revenue.toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                            <div className="absolute -bottom-8 left-0 right-0 text-center">
+                                                                <span className="text-[10px] text-gray-500 font-medium">{d.month}</span>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <span className="text-xs text-gray-400 rotate-0 md:rotate-0 whitespace-nowrap">{data.month}</span>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Payment Status Doughnut Chart */}
+                                    <div className="card-glass p-8">
+                                        <h3 className="text-xl font-bold mb-8">Payment Status Overview</h3>
+                                        <div className="flex flex-col md:flex-row items-center gap-8 justify-center">
+                                            <div className="relative w-48 h-48">
+                                                <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                                                    {(() => {
+                                                        const total = analytics.statusBreakdown.reduce((sum: number, s: any) => sum + s.value, 0) || 1;
+                                                        let cumulativeOffset = 0;
+                                                        return analytics.statusBreakdown.map((s: any, i: number) => {
+                                                            const percentage = (s.value / total) * 100;
+                                                            if (percentage === 0) return null;
+
+                                                            // Calculate stroke dasharray: [dash, gap]
+                                                            // We want a small gap between sections
+                                                            const strokeDash = Math.max(0, (percentage * 2.83) - 2);
+                                                            const strokeGap = 283 - strokeDash;
+                                                            const offset = cumulativeOffset * 2.83;
+                                                            cumulativeOffset += percentage;
+
+                                                            return (
+                                                                <circle
+                                                                    key={s.id}
+                                                                    cx="50"
+                                                                    cy="50"
+                                                                    r="45"
+                                                                    fill="transparent"
+                                                                    stroke={s.color}
+                                                                    strokeWidth="12"
+                                                                    strokeDasharray={`${strokeDash} ${strokeGap}`}
+                                                                    strokeDashoffset={-offset}
+                                                                    className="transition-all duration-1000"
+                                                                />
+                                                            );
+                                                        });
+                                                    })()}
+                                                </svg>
+                                                {/* Center Label */}
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className="text-2xl font-bold">{analytics.totalInvoices}</span>
+                                                    <span className="text-[10px] text-gray-500 uppercase tracking-widest">Invoices</span>
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+
+                                            {/* Legend */}
+                                            <div className="space-y-4 min-w-[140px]">
+                                                {analytics.statusBreakdown.map((s: any) => (
+                                                    <div key={s.id} className="flex items-center gap-3">
+                                                        <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: s.color }}></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-xs font-semibold">{s.label}</p>
+                                                            <p className="text-[10px] text-gray-400">{s.value} Invoices</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Recent Transactions */}
-                                <div className="bg-gray-900 border border-gray-800 p-6 rounded-xl">
-                                    <h3 className="text-xl font-bold mb-6">Recent Transactions</h3>
-                                    {analytics.recentTransactions && analytics.recentTransactions.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {analytics.recentTransactions.map((invoice: any) => (
-                                                <div key={invoice.id} className="flex justify-between items-center p-4 bg-gray-800 rounded-lg">
-                                                    <div>
-                                                        <p className="font-semibold">{invoice.clientName}</p>
-                                                        <p className="text-sm text-gray-400">{invoice.invoiceNumber} • {new Date(invoice.issueDate).toLocaleDateString()}</p>
+                                <div className="card-glass p-8">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold">Recent Transactions</h3>
+                                        <button onClick={() => setActiveTab('invoices')} className="text-accent-primary text-sm hover:underline">View All</button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {analytics.recentTransactions && analytics.recentTransactions.length > 0 ? (
+                                            analytics.recentTransactions.map((invoice: any) => (
+                                                <div key={invoice.id} className="flex justify-between items-center p-4 bg-gray-800/40 rounded-xl hover:bg-gray-800/60 transition group border border-gray-800/50">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`p-2 rounded-lg ${invoice.status === 'paid' ? 'bg-green-500/10 text-green-500' :
+                                                                invoice.status === 'overdraft' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+                                                            }`}>
+                                                            {invoice.status === 'paid' ? <FiCheckCircle /> : <FiClock />}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold group-hover:text-accent-primary transition">{invoice.clientName}</p>
+                                                            <p className="text-xs text-gray-500">{invoice.invoiceNumber} • {new Date(invoice.issueDate).toLocaleDateString()}</p>
+                                                        </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className={`font-bold ${invoice.status === 'paid' ? 'text-green-400' : invoice.status === 'overdraft' ? 'text-red-400' : 'text-yellow-400'}`}>
-                                                            KES {(invoice.totalAmount || 0).toLocaleString()}
-                                                        </p>
-                                                        <span className={`text-xs px-2 py-0.5 rounded ${invoice.status === 'paid' ? 'bg-green-900/30 text-green-400' :
-                                                            invoice.status === 'overdraft' ? 'bg-red-900/30 text-red-400' :
-                                                                'bg-yellow-900/30 text-yellow-400'
+                                                        <p className="font-bold text-white">KES {invoice.totalAmount.toLocaleString()}</p>
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider ${invoice.status === 'paid' ? 'bg-green-500/20 text-green-400' :
+                                                                invoice.status === 'overdraft' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
                                                             }`}>
                                                             {invoice.status}
                                                         </span>
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-gray-500 text-center py-8">No transactions yet.</p>
-                                    )}
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-500 text-center py-8">No transactions yet.</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}

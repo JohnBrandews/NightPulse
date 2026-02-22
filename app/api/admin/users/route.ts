@@ -39,14 +39,22 @@ export async function GET(req: NextRequest) {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
                 role: true,
                 isVerified: true,
                 isActive: true,
                 profileImage: true,
                 createdAt: true,
-                // Include relevant profile info
+                lastActive: true,
                 clubName: true,
                 djName: true,
+                _count: {
+                    select: {
+                        ownedClubs: true,
+                        bookings: true,
+                        applications: true,
+                    }
+                }
             }
         });
 

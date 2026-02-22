@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { FiCheck, FiX, FiUsers, FiShield, FiCalendar, FiActivity, FiRefreshCw } from 'react-icons/fi';
+import Link from 'next/link';
+import { FiCheck, FiX, FiUsers, FiShield, FiCalendar, FiActivity, FiRefreshCw, FiEye, FiCheckCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function AdminPage() {
@@ -154,120 +155,230 @@ export default function AdminPage() {
         {/* Content */}
         <div className="card overflow-x-auto">
           {activeTab === 'users' && (
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-700 text-gray-400">
-                  <th className="p-3">Name/Email</th>
-                  <th className="p-3">Role</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                    <td className="p-3">
-                      <div>
-                        <div className="font-semibold">{u.name}</div>
-                        <div className="text-sm text-gray-500">{u.email}</div>
-                      </div>
-                    </td>
-                    <td className="p-3 capitalize">{u.role}</td>
-                    <td className="p-3">
-                      {u.isVerified && <span className="text-green-400 mr-2">✓ Verified</span>}
-                      {!u.isActive && <span className="text-red-400">⚠ Suspended</span>}
-                      {!u.isVerified && u.isActive && <span className="text-yellow-400">Pending</span>}
-                    </td>
-                    <td className="p-3 flex space-x-2">
-                      {!u.isVerified && (
-                        <>
-                          <button onClick={() => handleUserAction(u.id, 'approve')} className="btn-primary text-xs px-2 py-1">Approve</button>
-                          <button onClick={() => handleUserAction(u.id, 'reject')} className="btn-secondary text-xs px-2 py-1">Reject</button>
-                        </>
-                      )}
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
+              {data.map((u) => {
+                const businessCount = u._count?.ownedClubs || 0;
+                const reviewCount = 0; // Placeholder
+                const reportCount = 0; // Placeholder
 
-                      {u.isActive ? (
-                        u.role !== 'admin' ? (
-                          <button onClick={() => handleUserAction(u.id, 'suspend')} className="text-red-400 hover:underline text-sm">Suspend</button>
+                return (
+                  <div key={u.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col text-gray-800">
+                    <div className="p-6">
+                      {/* Header with Avatar & Basic Info */}
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 border-2 border-white shadow-sm">
+                          {u.profileImage ? (
+                            <img src={u.profileImage} alt={u.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-[#2c3e50] text-white font-bold text-lg">
+                              {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-lg truncate">{u.name}</h3>
+                            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                          </div>
+                          <p className="text-gray-400 text-xs truncate">{u.phone || u.email}</p>
+                        </div>
+                      </div>
+
+                      {/* Role & Status Row */}
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Role</p>
+                          <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-center flex items-center justify-center gap-1.5 ${u.role === 'admin' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                            u.role === 'club' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                              'bg-blue-50 text-blue-600 border border-blue-100'
+                            }`}>
+                            {u.role === 'club' ? 'Business Owner' : u.role === 'user' ? 'Customer' : u.role}
+                            {u.role === 'admin' && <FiShield size={10} />}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Status</p>
+                          <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-center ${u.isActive ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
+                            }`}>
+                            {u.isActive ? 'Active' : 'Suspended'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Dates Row */}
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Joined</p>
+                          <p className="text-sm font-semibold">{new Date(u.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Last Login</p>
+                          <p className="text-sm font-semibold">{u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'}</p>
+                        </div>
+                      </div>
+
+                      {/* Stats Icons */}
+                      <div className="flex gap-4 p-3 bg-gray-50/50 rounded-xl mb-6">
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <FiActivity size={12} className="text-gray-400" />
+                          <span className="text-xs font-medium">{reviewCount} Reviews</span>
+                        </div>
+                        {u.role === 'club' && (
+                          <div className="flex items-center gap-1.5 text-gray-500">
+                            <FiCalendar size={12} className="text-gray-400" />
+                            <span className="text-xs font-medium">{businessCount} Businesses</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <FiCheckCircle size={12} className="text-gray-400" />
+                          <span className="text-xs font-medium">{reportCount} Reports</span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <Link href={`/profile/${u.id}`} className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-[11px] font-bold">
+                          <FiEye size={14} /> View
+                        </Link>
+
+                        {!u.isVerified ? (
+                          <button
+                            onClick={() => handleUserAction(u.id, 'approve')}
+                            className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition text-[11px] font-bold"
+                          >
+                            <FiCheck size={14} /> Verify
+                          </button>
                         ) : (
-                          <span className="text-gray-500 text-sm">Admin</span>
-                        )
-                      ) : (
-                        <button onClick={() => handleUserAction(u.id, 'unsuspend')} className="text-green-400 hover:underline text-sm">Unsuspend</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          <button
+                            className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition text-[11px] font-bold opacity-50 cursor-not-allowed"
+                            disabled
+                          >
+                            <FiCheckCircle size={14} /> Verified
+                          </button>
+                        )}
+
+                        {u.isActive ? (
+                          u.role !== 'admin' ? (
+                            <button
+                              onClick={() => handleUserAction(u.id, 'suspend')}
+                              className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-[11px] font-bold"
+                            >
+                              <FiActivity size={14} /> Deactivate
+                            </button>
+                          ) : (
+                            <button className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-gray-50 text-gray-400 transition text-[11px] font-bold cursor-not-allowed" disabled>
+                              <FiShield size={14} /> Root
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => handleUserAction(u.id, 'unsuspend')}
+                            className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition text-[11px] font-bold"
+                          >
+                            <FiRefreshCw size={14} /> Recover
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {activeTab === 'clubs' && (
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-700 text-gray-400">
-                  <th className="p-3">Club Name</th>
-                  <th className="p-3">Owner</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((c) => (
-                  <tr key={c.id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                    <td className="p-3 font-semibold">{c.name}</td>
-                    <td className="p-3">
-                      <div className="text-sm">{c.owner?.name}</div>
-                      <div className="text-xs text-gray-500">{c.owner?.email}</div>
-                    </td>
-                    <td className="p-3">
-                      {c.isVerified ? <span className="text-green-400">Verified</span> : <span className="text-yellow-400">Pending</span>}
-                    </td>
-                    <td className="p-3 flex space-x-2">
-                      {!c.isVerified && (
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
+              {data.map((c) => (
+                <div key={c.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col text-gray-800">
+                  <div className="p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0">
+                        {c.logo ? <img src={c.logo} className="w-full h-full object-contain p-1" /> : <FiCalendar className="text-gray-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg truncate">{c.name}</h3>
+                        <p className="text-gray-400 text-xs truncate">{c.address}, {c.county}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Owner</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">
+                          {c.owner?.name?.[0]}
+                        </div>
+                        <span className="text-sm font-medium">{c.owner?.name}</span>
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Verification</p>
+                      <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-center inline-block ${c.isVerified ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+                        }`}>
+                        {c.isVerified ? 'Verified' : 'Pending Review'}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mt-auto">
+                      {!c.isVerified ? (
                         <>
-                          <button onClick={() => handleClubAction(c.id, 'approve')} className="btn-primary text-xs px-2 py-1">Approve</button>
-                          <button onClick={() => handleClubAction(c.id, 'reject')} className="btn-secondary text-xs px-2 py-1">Reject</button>
+                          <button onClick={() => handleClubAction(c.id, 'approve')} className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition text-[11px] font-bold">
+                            <FiCheck size={14} /> Approve
+                          </button>
+                          <button onClick={() => handleClubAction(c.id, 'reject')} className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-[11px] font-bold">
+                            <FiX size={14} /> Reject
+                          </button>
                         </>
+                      ) : (
+                        <button onClick={() => handleClubAction(c.id, 'reject')} className="col-span-2 flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-[11px] font-bold">
+                          <FiX size={14} /> Revoke Verification
+                        </button>
                       )}
-                      {c.isVerified && (
-                        <button onClick={() => handleClubAction(c.id, 'reject')} className="text-red-400 hover:underline text-sm">Revoke</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {activeTab === 'events' && (
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-700 text-gray-400">
-                  <th className="p-3">Event</th>
-                  <th className="p-3">Date</th>
-                  <th className="p-3">Club</th>
-                  <th className="p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((e) => (
-                  <tr key={e.id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                    <td className="p-3">
-                      <div className="font-semibold">{e.title}</div>
-                      <div className="text-xs text-gray-500 truncate max-w-xs">{e.description}</div>
-                    </td>
-                    <td className="p-3 text-sm">{new Date(e.date).toLocaleDateString()}</td>
-                    <td className="p-3 text-sm">{e.club?.name}</td>
-                    <td className="p-3">
-                      <button onClick={() => handleDeleteEvent(e.id)} className="text-red-500 hover:text-red-400 border border-red-500 px-2 py-1 rounded text-xs">
-                        Remove
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
+              {data.map((e) => (
+                <div key={e.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col text-gray-800">
+                  {e.image && (
+                    <div className="h-32 w-full relative">
+                      <img src={e.image} className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-white/50">
+                        {e.eventType || 'Regular'}
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="font-bold text-lg mb-1 truncate">{e.title}</h3>
+                    <p className="text-gray-400 text-xs mb-4 flex items-center gap-1">
+                      <FiCalendar size={12} /> {new Date(e.date).toLocaleDateString()}
+                    </p>
+
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg mb-6">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">At</span>
+                      <span className="text-xs font-semibold">{e.club?.name}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mt-auto">
+                      <Link href={`/events/${e.id}`} className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-[11px] font-bold">
+                        <FiEye size={14} /> Preview
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteEvent(e.id)}
+                        className="flex items-center justify-center gap-2 py-2 px-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-[11px] font-bold"
+                      >
+                        <FiActivity size={14} /> Remove
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

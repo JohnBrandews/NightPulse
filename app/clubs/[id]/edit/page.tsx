@@ -22,6 +22,9 @@ export default function EditClubPage() {
         website: '',
         phone: '',
         email: '',
+        tablePrice: '',
+        boothPrice: '',
+        generalPrice: '',
     });
 
     const [musicInput, setMusicInput] = useState('');
@@ -45,6 +48,9 @@ export default function EditClubPage() {
                     website: club.website || '',
                     phone: club.phone || '',
                     email: club.email || '',
+                    tablePrice: club.tablePrice?.toString() || '0',
+                    boothPrice: club.boothPrice?.toString() || '0',
+                    generalPrice: club.generalPrice?.toString() || '0',
                 });
                 setLoading(false);
             } catch (error) {
@@ -89,6 +95,9 @@ export default function EditClubPage() {
                 body: JSON.stringify({
                     ...formData,
                     capacity: parseInt(formData.capacity),
+                    tablePrice: parseFloat(formData.tablePrice) || 0,
+                    boothPrice: parseFloat(formData.boothPrice) || 0,
+                    generalPrice: parseFloat(formData.generalPrice) || 0,
                 }),
             });
 
@@ -211,6 +220,40 @@ export default function EditClubPage() {
                                 className="input-field"
                                 value={formData.website}
                                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Pricing Row */}
+                        <div>
+                            <label className="label">Table Booking Price (KES)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                className="input-field"
+                                value={formData.tablePrice}
+                                onChange={(e) => setFormData({ ...formData, tablePrice: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="label">Booth Booking Price (KES)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                className="input-field"
+                                value={formData.boothPrice}
+                                onChange={(e) => setFormData({ ...formData, boothPrice: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="label">General Booking Price (KES)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                className="input-field"
+                                value={formData.generalPrice}
+                                onChange={(e) => setFormData({ ...formData, generalPrice: e.target.value })}
                             />
                         </div>
                     </div>

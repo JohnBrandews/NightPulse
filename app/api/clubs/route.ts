@@ -15,6 +15,9 @@ const clubSchema = z.object({
   website: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
+  tablePrice: z.number().min(0).optional().default(0),
+  boothPrice: z.number().min(0).optional().default(0),
+  generalPrice: z.number().min(0).optional().default(0),
 });
 
 export async function POST(req: NextRequest) {
@@ -40,6 +43,9 @@ export async function POST(req: NextRequest) {
         website: validatedData.website || null,
         phone: validatedData.phone || null,
         email: validatedData.email || null,
+        tablePrice: validatedData.tablePrice,
+        boothPrice: validatedData.boothPrice,
+        generalPrice: validatedData.generalPrice,
         isVerified: false, // Requires admin approval
       },
     });

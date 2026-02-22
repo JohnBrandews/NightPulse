@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!club) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         analytics: {
           totalRevenue: 0,
           totalInvoices: 0,
@@ -47,8 +47,17 @@ export async function GET(req: NextRequest) {
 
     const totalInvoices = invoices.length;
     const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
-    const pendingInvoices = invoices.filter(inv => inv.status === 'pending').length;
-    const overdraftInvoices = invoices.filter(inv => inv.status === 'overdraft').length;
+    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' && inv.emailSent).length;
+    const overdraftInvoices = invoices.filter(inv => inv.status === 'overdraft' || inv.paymentStatus === 'overdue').length;
+    const draftInvoices = invoices.filter(inv => inv.status === 'pending' && !inv.emailSent).length;
+
+    // Status breakdown for Chart
+    const statusBreakdown = [
+      { id: 'paid', label: 'Paid', value: paidInvoices, color: '#10b981' }, // green-500
+      { id: 'pending', label: 'Pending', value: pendingInvoices, color: '#f59e0b' }, // amber-500
+      { id: 'overdue', label: 'Overdue', value: overdraftInvoices, color: '#ef4444' }, // red-500
+      { id: 'draft', label: 'Draft', value: draftInvoices, color: '#64748b' }, // slate-500
+    ];
 
     // Calculate monthly revenue data (last 12 months)
     const now = new Date();
@@ -57,9 +66,9 @@ export async function GET(req: NextRequest) {
     for (let i = 11; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      
-      const monthLabel = monthDate.toLocaleDateString('en-KE', { month: 'short', year: '2-digit' });
-      
+
+      const monthLabel = monthDate.toLocaleDateString('en-KE', { month: 'short' });
+
       const monthInvoices = invoices.filter(inv => {
         const invDate = new Date(inv.issueDate);
         return invDate >= monthDate && invDate <= monthEnd;
@@ -79,24 +88,24 @@ export async function GET(req: NextRequest) {
     // Calculate average monthly revenue
     const paidInvoicesList = invoices.filter(inv => inv.status === 'paid');
     let averageMonthlyRevenue = 0;
-    
+
     if (paidInvoicesList.length > 0) {
       // Find the date range of paid invoices
       const dates = paidInvoicesList.map(inv => new Date(inv.issueDate).getTime());
       const minDate = new Date(Math.min(...dates));
       const maxDate = new Date(Math.max(...dates));
-      
+
       // Calculate number of months
-      const monthsDiff = (maxDate.getFullYear() - minDate.getFullYear()) * 12 + 
-                         (maxDate.getMonth() - minDate.getMonth()) + 1;
-      
+      const monthsDiff = (maxDate.getFullYear() - minDate.getFullYear()) * 12 +
+        (maxDate.getMonth() - minDate.getMonth()) + 1;
+
       averageMonthlyRevenue = monthsDiff > 0 ? totalRevenue / monthsDiff : totalRevenue;
     }
 
     // Get recent transactions
     const recentTransactions = invoices
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 10);
+      .slice(0, 5);
 
     return NextResponse.json({
       analytics: {
@@ -105,8 +114,10 @@ export async function GET(req: NextRequest) {
         paidInvoices,
         pendingInvoices,
         overdraftInvoices,
+        draftInvoices,
         averageMonthlyRevenue,
         monthlyData,
+        statusBreakdown,
         recentTransactions,
       }
     });

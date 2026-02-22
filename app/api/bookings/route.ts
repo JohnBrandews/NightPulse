@@ -49,12 +49,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
     }
 
-    // Calculate initial price if event has cover charge
+    // Calculate initial price
     let totalAmount = 0;
+
+    // 1. Try Event Price (Per Guest)
     if (eventId) {
       const ev = await prisma.event.findUnique({ where: { id: eventId } });
       if (ev?.coverCharge) {
         totalAmount = ev.coverCharge * validatedData.numberOfGuests;
+      }
+    }
+
+    // 2. Fallback to Club Flat Pricing (Per Unit/Type) if no event price
+    if (totalAmount === 0) {
+      if (validatedData.bookingType === 'table') {
+        totalAmount = club.tablePrice || 0;
+      } else if (validatedData.bookingType === 'booth') {
+        totalAmount = club.boothPrice || 0;
+      } else if (validatedData.bookingType === 'general') {
+        totalAmount = club.generalPrice || 0;
       }
     }
 

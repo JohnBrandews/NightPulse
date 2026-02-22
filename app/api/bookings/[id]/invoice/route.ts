@@ -71,15 +71,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Calculate amounts:
     //   - If booking is for an event: subtotal = event.coverCharge × numberOfGuests
-    //   - If no event or no cover charge: fall back to booking.totalAmount (price already total)
-    //   - VAT = 1.5%
+    //   - If no event or no cover charge: fall back to booking.totalAmount (flat fee set during booking)
     const pricePerGuest = booking.event?.coverCharge ?? 0;
-    const subtotal = pricePerGuest > 0
+    const isPerGuest = pricePerGuest > 0;
+    const subtotal = isPerGuest
       ? pricePerGuest * booking.numberOfGuests
       : (booking.totalAmount ?? 0);
+
     const TAX_RATE = 0.015; // 1.5% VAT
     const tax = parseFloat((subtotal * TAX_RATE).toFixed(2));
     const totalAmount = parseFloat((subtotal + tax).toFixed(2));
+
+    let invoiceNotes = `Invoice for ${booking.bookingType.toUpperCase()} reservation`;
+    if (booking.event) {
+      invoiceNotes += ` at ${booking.event.title}`;
+    }
+
+    if (isPerGuest) {
+      invoiceNotes += ` (${booking.numberOfGuests} guest${booking.numberOfGuests > 1 ? 's' : ''} @ KES ${pricePerGuest} each)`;
+    } else {
+      invoiceNotes += ` (Flat Fee: KES ${subtotal})`;
+    }
 
     // Set due date (7 days from now)
     const dueDate = new Date();
@@ -102,7 +114,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         totalAmount,
         status: 'pending',
         paymentStatus: 'pending',
-        notes: `Invoice for ${booking.bookingType.toUpperCase()} reservation${booking.event ? ` at ${booking.event.title}` : ''} (${booking.numberOfGuests} guest${booking.numberOfGuests > 1 ? 's' : ''} @ KES ${pricePerGuest} each)`,
+        notes: invoiceNotes,
       },
       include: {
         booking: {

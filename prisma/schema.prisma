@@ -91,6 +91,12 @@ model Club {
   openingHours  String?  // JSON object as string
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
+
+  // Pricing for normal bookings
+  tablePrice    Float    @default(0)
+  boothPrice    Float    @default(0)
+  generalPrice  Float    @default(0)
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
