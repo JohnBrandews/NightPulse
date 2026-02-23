@@ -32,13 +32,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    // Verify club belongs to current user
-    const club = await prisma.club.findFirst({
-      where: { ownerId: currentUser.userId, id: invoice.clubId },
-    });
+    // Verify authorization (admin or club owner)
+    if (currentUser.role !== 'admin') {
+      const club = await prisma.club.findFirst({
+        where: { ownerId: currentUser.userId, id: invoice.clubId },
+      });
 
-    if (!club) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!club) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     // Check if user email exists

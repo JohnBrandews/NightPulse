@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { FiCheck, FiX, FiTrash2, FiClock, FiCheckCircle, FiDownload, FiFileText, FiSend, FiTrendingUp, FiDollarSign, FiCalendar, FiBarChart2, FiMail } from 'react-icons/fi';
 
 export default function ClubManagePage() {
-    const [activeTab, setActiveTab] = useState<'events' | 'bookings' | 'invoices' | 'applications' | 'analytics'>('events');
+    const [activeTab, setActiveTab] = useState<'events' | 'bookings' | 'invoices' | 'applications' | 'analytics' | 'clubs'>('events');
     const [data, setData] = useState<any>({ events: [], bookings: [], applications: [], invoices: [] });
     const [analytics, setAnalytics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -18,23 +18,26 @@ export default function ClubManagePage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [eventsRes, bookingsRes, applicationsRes, invoicesRes] = await Promise.all([
+            const [eventsRes, bookingsRes, applicationsRes, invoicesRes, clubsRes] = await Promise.all([
                 fetch('/api/events?includeInactive=true'),
                 fetch('/api/bookings'),
                 fetch('/api/applications?view=received'),
-                fetch('/api/bookings/invoices')
+                fetch('/api/bookings/invoices'),
+                fetch('/api/clubs?owner=me')
             ]);
 
             const events = await eventsRes.json();
             const bookings = await bookingsRes.json();
             const applications = await applicationsRes.json();
             const invoices = await invoicesRes.json();
+            const clubs = await clubsRes.json();
 
             setData({
                 events: events.events || [],
                 bookings: bookings.bookings || [],
                 applications: applications.applications || [],
-                invoices: invoices.invoices || []
+                invoices: invoices.invoices || [],
+                clubs: clubs.clubs || []
             });
         } catch (error) {
             console.error('Failed to fetch data', error);
@@ -118,6 +121,18 @@ export default function ClubManagePage() {
             fetchData();
         } catch (error) {
             toast.error('Failed to update application');
+        }
+    };
+
+    const deleteClub = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+        try {
+            const res = await fetch(`/api/clubs/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete club');
+            toast.success(`${name} deleted successfully`);
+            fetchData();
+        } catch (error) {
+            toast.error('Failed to delete club');
         }
     };
 
@@ -268,6 +283,12 @@ export default function ClubManagePage() {
                         className={`px-6 py-3 font-medium transition whitespace-nowrap rounded-t-lg ${activeTab === 'applications' ? 'text-accent-primary border-b-2 border-accent-primary bg-gray-800' : 'text-gray-400 hover:text-white'}`}
                     >
                         Applications ({data.applications.filter((a: any) => a.status === 'pending').length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('clubs')}
+                        className={`px-6 py-3 font-medium transition whitespace-nowrap rounded-t-lg ${activeTab === 'clubs' ? 'text-accent-primary border-b-2 border-accent-primary bg-gray-800' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        My Clubs ({data.clubs?.length || 0})
                     </button>
                     <button
                         onClick={() => { setActiveTab('analytics'); fetchAnalytics(); }}
@@ -595,6 +616,47 @@ export default function ClubManagePage() {
                             </div>
                         )}
 
+                        {activeTab === 'clubs' && (
+                            <div className="space-y-4">
+                                {data.clubs.map((club: any) => (
+                                    <div key={club.id} className="bg-gray-900 p-6 rounded-xl border border-gray-800 flex justify-between items-center group">
+                                        <div>
+                                            <h3 className="text-xl font-bold">{club.name}</h3>
+                                            <p className="text-gray-400 text-sm">{club.address}, {club.county}</p>
+                                            <div className="flex gap-2 mt-2">
+                                                {club.isVerified ? (
+                                                    <span className="bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold">VERIFIED</span>
+                                                ) : (
+                                                    <span className="bg-yellow-900/30 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold">PENDING APPROVAL</span>
+                                                )}
+                                                <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase">CLUB PROFILE</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <Link href={`/clubs/${club.id}/edit`} className="btn-secondary text-sm">
+                                                Edit Profile
+                                            </Link>
+                                            <button
+                                                onClick={() => deleteClub(club.id, club.name)}
+                                                className="p-3 rounded bg-red-900/20 text-red-500 hover:bg-red-600 hover:text-white transition"
+                                                title="Delete Club"
+                                            >
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {data.clubs.length === 0 && (
+                                    <div className="text-center py-12 bg-gray-900 rounded-xl border border-dashed border-gray-800">
+                                        <p className="text-gray-500 mb-4">You haven't added any clubs yet.</p>
+                                        <Link href="/clubs/create" className="btn-primary">
+                                            Add Your First Club
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'analytics' && analytics && (
                             <div className="space-y-8">
                                 {/* Revenue Overview Cards */}
@@ -752,7 +814,7 @@ export default function ClubManagePage() {
                                                 <div key={invoice.id} className="flex justify-between items-center p-4 bg-gray-800/40 rounded-xl hover:bg-gray-800/60 transition group border border-gray-800/50">
                                                     <div className="flex items-center gap-4">
                                                         <div className={`p-2 rounded-lg ${invoice.status === 'paid' ? 'bg-green-500/10 text-green-500' :
-                                                                invoice.status === 'overdraft' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+                                                            invoice.status === 'overdraft' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
                                                             }`}>
                                                             {invoice.status === 'paid' ? <FiCheckCircle /> : <FiClock />}
                                                         </div>
@@ -764,7 +826,7 @@ export default function ClubManagePage() {
                                                     <div className="text-right">
                                                         <p className="font-bold text-white">KES {invoice.totalAmount.toLocaleString()}</p>
                                                         <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider ${invoice.status === 'paid' ? 'bg-green-500/20 text-green-400' :
-                                                                invoice.status === 'overdraft' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                                                            invoice.status === 'overdraft' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
                                                             }`}>
                                                             {invoice.status}
                                                         </span>

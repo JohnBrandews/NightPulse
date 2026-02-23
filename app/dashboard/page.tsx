@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
-import { FiUsers, FiCalendar, FiMessageCircle, FiTrendingUp, FiMusic } from 'react-icons/fi';
+import { FiUsers, FiCalendar, FiMessageCircle, FiTrendingUp, FiMusic, FiTrash2 } from 'react-icons/fi';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -55,13 +55,13 @@ export default function DashboardPage() {
         ]);
         const appsData = await appsRes.json();
         const meData = await meRes.json();
-        
+
         // Get music links for DJ (already parsed by /api/auth/me)
         let musicLinks: string[] = [];
         if (userData.role === 'dj' && meData.user?.djMusicLinks) {
           musicLinks = Array.isArray(meData.user.djMusicLinks) ? meData.user.djMusicLinks : [];
         }
-        
+
         setStats({
           applications: appsData.applications || [],
           musicLinks: musicLinks
@@ -184,8 +184,8 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <span className={`px-2 py-1 rounded text-xs capitalize font-medium ${booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
-                            booking.status === 'rejected' || booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
-                              'bg-yellow-900 text-yellow-300'
+                          booking.status === 'rejected' || booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
+                            'bg-yellow-900 text-yellow-300'
                           }`}>
                           {booking.status}
                         </span>
@@ -225,45 +225,62 @@ export default function DashboardPage() {
             </div>
 
             {/* Management Actions */}
-            <div className="grid md:grid-cols-3 gap-6">
-              <Link href="/events/create" className="card hover:bg-gray-800 transition cursor-pointer group">
-                <h3 className="text-xl font-bold text-accent-primary group-hover:text-white mb-2">Post Event</h3>
-                <p className="text-gray-400 text-sm">Create a new event or gig for your club.</p>
+            <div className="grid md:grid-cols-4 gap-4">
+              <Link href="/events/create" className="p-4 bg-gray-900 rounded-xl border border-gray-800 hover:bg-gray-800 transition cursor-pointer group">
+                <h3 className="text-lg font-bold text-accent-primary group-hover:text-white mb-1">Post Event</h3>
+                <p className="text-gray-400 text-xs">Create a new event or gig for your club.</p>
               </Link>
-              <Link href="/events/create" className="card hover:bg-gray-800 transition cursor-pointer group">
-                <h3 className="text-xl font-bold text-accent-primary group-hover:text-white mb-2">Post Event</h3>
-                <p className="text-gray-400 text-sm">Create a new event or gig for your club.</p>
+
+              <Link href="/dashboard/club/manage" className="p-4 bg-gray-900 rounded-xl border border-gray-800 hover:bg-gray-800 transition cursor-pointer group">
+                <h3 className="text-lg font-bold text-accent-primary group-hover:text-white mb-1">Manage All</h3>
+                <p className="text-gray-400 text-xs">View and manage all events, bookings, and applications.</p>
               </Link>
 
               {/* Club Profiles List */}
-              <div className="card">
-                <h3 className="text-xl font-bold text-accent-primary mb-2">My Clubs</h3>
+              <div className="p-4 bg-gray-900 rounded-xl border border-gray-800 col-span-2">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-bold text-accent-primary">My Clubs</h3>
+                  <Link href="/clubs/create" className="text-[10px] bg-accent-primary/20 text-accent-primary py-1 px-2 rounded-full hover:bg-accent-primary/30 transition">
+                    + Add Club
+                  </Link>
+                </div>
                 {stats.clubs && stats.clubs.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {stats.clubs.map((club: any) => (
-                      <Link key={club.id} href={`/clubs/${club.id}/edit`} className="block p-2 bg-gray-800 rounded hover:bg-gray-700 transition flex justify-between items-center group">
-                        <span className="text-white group-hover:text-accent-primary">{club.name}</span>
-                        <span className="text-xs text-gray-500">Edit &rarr;</span>
-                      </Link>
+                      <div key={club.id} className="flex bg-gray-800 rounded group overflow-hidden">
+                        <Link href={`/clubs/${club.id}/edit`} className="flex-1 p-2 hover:bg-gray-700 transition flex justify-between items-center overflow-hidden">
+                          <span className="text-white group-hover:text-accent-primary text-sm truncate">{club.name}</span>
+                        </Link>
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            if (window.confirm(`Are you sure you want to delete ${club.name}?`)) {
+                              try {
+                                const res = await fetch(`/api/clubs/${club.id}`, { method: 'DELETE' });
+                                if (res.ok) {
+                                  setUser({ ...user }); // Trigger re-render/refetch
+                                  loadStats(user);
+                                }
+                              } catch (err) { }
+                            }
+                          }}
+                          className="px-3 bg-red-900/30 text-red-500 hover:bg-red-600 hover:text-white transition flex items-center"
+                          title="Delete Club"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
                     ))}
-                    <Link href="/clubs/create" className="text-xs text-accent-primary hover:underline mt-2 block">
-                      + Add another club
-                    </Link>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-gray-400 text-sm mb-2">You haven't created a club profile yet.</p>
-                    <Link href="/clubs/create" className="btn-secondary text-xs w-full block text-center">
+                    <p className="text-gray-400 text-xs mb-2">No club profiles yet.</p>
+                    <Link href="/clubs/create" className="btn-secondary text-[10px] py-1 w-full block text-center">
                       Create Club Profile
                     </Link>
                   </div>
                 )}
               </div>
-
-              <Link href="/dashboard/club/manage" className="card hover:bg-gray-800 transition cursor-pointer group">
-                <h3 className="text-xl font-bold text-accent-primary group-hover:text-white mb-2">Manage All</h3>
-                <p className="text-gray-400 text-sm">View and manage all events, bookings, and applications.</p>
-              </Link>
             </div>
 
             {/* Quick Links to dedicated management pages - Implemented as a separate page for cleaner UI */}

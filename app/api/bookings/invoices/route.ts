@@ -9,18 +9,40 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get club owned by current user
-    const club = await prisma.club.findFirst({
-      where: { ownerId: currentUser.userId },
-    });
+    const role = currentUser.role;
+    const { searchParams } = new URL(req.url);
+    const clubId = searchParams.get('clubId');
 
-    if (!club) {
-      return NextResponse.json({ error: 'No club found' }, { status: 404 });
+    const where: any = {};
+
+    if (role === 'admin') {
+      if (clubId) where.clubId = clubId;
+    } else if (role === 'club') {
+      // Get all clubs owned by current user
+      const clubs = await prisma.club.findMany({
+        where: { ownerId: currentUser.userId },
+        select: { id: true },
+      });
+
+      if (clubs.length === 0) {
+        return NextResponse.json({ invoices: [] });
+      }
+
+      const clubIds = clubs.map(c => c.id);
+
+      if (clubId && clubIds.includes(clubId)) {
+        where.clubId = clubId;
+      } else {
+        where.clubId = { in: clubIds };
+      }
+    } else {
+      // Regular users see their own invoices
+      where.userId = currentUser.userId;
     }
 
-    // Get all invoices for this club
+    // Get all invoices based on filter
     const invoices = await prisma.invoice.findMany({
-      where: { clubId: club.id },
+      where,
       include: {
         booking: {
           include: {

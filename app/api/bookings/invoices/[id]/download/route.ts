@@ -43,13 +43,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    // Verify access (club owner or invoice owner)
-    const club = await prisma.club.findFirst({
-      where: { ownerId: currentUser.userId, id: invoice.clubId },
-    });
+    // Verify access (admin, club owner, or invoice owner)
+    if (currentUser.role !== 'admin' && currentUser.userId !== invoice.userId) {
+      const club = await prisma.club.findFirst({
+        where: { ownerId: currentUser.userId, id: invoice.clubId },
+      });
 
-    if (!club && currentUser.userId !== invoice.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!club) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const isReceipt = invoice.status === 'paid';

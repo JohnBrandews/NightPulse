@@ -18,7 +18,9 @@ export default function ApplicationForm({ event, gig, currentUser, onSuccess }: 
             name: currentUser?.name || '',
             email: currentUser?.email || '',
             phone: currentUser?.phone || '',
-            musicLinks: currentUser?.djMusicLinks || '', // Basic heuristic
+            musicLinks: Array.isArray(currentUser?.djMusicLinks)
+                ? currentUser.djMusicLinks.join('\n')
+                : currentUser?.djMusicLinks || '',
             salaryExpectation: '',
             message: ''
         }

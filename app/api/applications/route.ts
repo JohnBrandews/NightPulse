@@ -8,6 +8,17 @@ const updateApplicationSchema = z.object({
     status: z.enum(['pending', 'accepted', 'rejected']),
 });
 
+const createApplicationSchema = z.object({
+    eventId: z.string().optional().nullable(),
+    gigId: z.string().optional().nullable(),
+    message: z.string().optional(),
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email"),
+    phone: z.string().min(1, "Phone is required"),
+    salaryExpectation: z.string().optional(),
+    musicLinks: z.union([z.string(), z.array(z.string())]).optional().nullable(),
+});
+
 export async function POST(req: NextRequest) {
     try {
         const currentUser = await getCurrentUser(req);
@@ -21,9 +32,9 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { eventId, gigId, message, name, email, phone, salaryExpectation, musicLinks } = body;
+        const validatedData = createApplicationSchema.parse(body);
 
-        if (!eventId && !gigId) {
+        if (!validatedData.eventId && !validatedData.gigId) {
             return NextResponse.json({ error: 'Must apply to an Event or Gig' }, { status: 400 });
         }
 
@@ -32,8 +43,8 @@ export async function POST(req: NextRequest) {
             where: {
                 applicantId: currentUser.userId,
                 OR: [
-                    { eventId: eventId || undefined },
-                    { gigId: gigId || undefined }
+                    { eventId: validatedData.eventId || undefined },
+                    { gigId: validatedData.gigId || undefined }
                 ]
             }
         });
@@ -42,18 +53,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'You have already applied for this position' }, { status: 409 });
         }
 
+        // Handle musicLinks serialization
+        const musicLinksStr = Array.isArray(validatedData.musicLinks)
+            ? JSON.stringify(validatedData.musicLinks)
+            : validatedData.musicLinks;
+
         const application = await prisma.application.create({
             data: {
                 applicantId: currentUser.userId,
-                eventId: eventId || null,
-                gigId: gigId || null,
-                message: message || '',
+                eventId: validatedData.eventId || null,
+                gigId: validatedData.gigId || null,
+                message: validatedData.message || '',
                 status: 'pending',
-                name,
-                email,
-                phone,
-                salaryExpectation,
-                musicLinks,
+                name: validatedData.name,
+                email: validatedData.email,
+                phone: validatedData.phone,
+                salaryExpectation: validatedData.salaryExpectation,
+                musicLinks: musicLinksStr,
             },
             include: {
                 event: { include: { club: true } },

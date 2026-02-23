@@ -57,14 +57,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Invoice already exists for this booking', invoice: existingInvoice }, { status: 400 });
     }
 
-    // Verify club belongs to current user
-    const club = await prisma.club.findFirst({
-      where: { ownerId: currentUser.userId, id: booking.clubId },
-    });
+    // Verify authorization
+    if (currentUser.role !== 'admin') {
+      const club = await prisma.club.findFirst({
+        where: { ownerId: currentUser.userId, id: booking.clubId },
+      });
 
-    if (!club) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!club) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
+
+    // Use the existing club ID or find it if admin
+    const targetClubId = booking.clubId;
 
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}-${bookingId.slice(-6).toUpperCase()}`;
@@ -101,7 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const invoice = await prisma.invoice.create({
       data: {
         bookingId: booking.id,
-        clubId: club.id,
+        clubId: targetClubId,
         userId: booking.userId,
         invoiceNumber,
         clientName: booking.user.name,

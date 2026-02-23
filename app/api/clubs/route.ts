@@ -82,8 +82,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
       where.ownerId = currentUser.userId;
-      // Remove isActive constraint for own clubs so they can see pending ones
-      delete where.isActive;
+      // Default to active clubs only, even for 'me'
+      where.isActive = true;
     }
 
     if (county) {

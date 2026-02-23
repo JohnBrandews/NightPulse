@@ -240,7 +240,7 @@ async function seed() {
 
     console.log('✅ Seed data created successfully!');
     console.log('\nTest accounts:');
-    console.log('Admin: admin@nightpulse.com / admin123');
+    console.log('Admin: nightpulse@gmail.com / Admin123');
     console.log('User: john@example.com / user123');
     console.log('User: sarah@example.com / user123');
     console.log('Club: club@example.com / club123');

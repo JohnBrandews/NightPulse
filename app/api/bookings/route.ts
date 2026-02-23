@@ -177,6 +177,7 @@ export async function GET(req: NextRequest) {
               date: true,
             },
           },
+          invoice: true,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -200,6 +201,7 @@ export async function GET(req: NextRequest) {
               date: true,
             },
           },
+          invoice: true,
         },
         orderBy: { createdAt: 'desc' },
       });

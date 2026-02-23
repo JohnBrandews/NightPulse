@@ -9,34 +9,61 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get club owned by current user
-    const club = await prisma.club.findFirst({
-      where: { ownerId: currentUser.userId },
-    });
+    const { searchParams } = new URL(req.url);
+    const clubId = searchParams.get('clubId');
+    const role = currentUser.role;
 
-    if (!club) {
-      return NextResponse.json({
-        analytics: {
-          totalRevenue: 0,
-          totalInvoices: 0,
-          paidInvoices: 0,
-          pendingInvoices: 0,
-          overdraftInvoices: 0,
-          averageMonthlyRevenue: 0,
-          monthlyData: [],
-        }
+    const where: any = {};
+
+    if (role === 'admin') {
+      if (clubId) where.clubId = clubId;
+    } else if (role === 'club') {
+      // Get all clubs owned by current user
+      const clubs = await prisma.club.findMany({
+        where: { ownerId: currentUser.userId },
+        select: { id: true },
       });
+
+      if (clubs.length === 0) {
+        return NextResponse.json({
+          analytics: {
+            totalRevenue: 0,
+            totalInvoices: 0,
+            paidInvoices: 0,
+            pendingInvoices: 0,
+            overdraftInvoices: 0,
+            averageMonthlyRevenue: 0,
+            monthlyData: [],
+            statusBreakdown: [],
+            recentTransactions: [],
+          }
+        });
+      }
+
+      const clubIds = clubs.map(c => c.id);
+
+      if (clubId && clubIds.includes(clubId)) {
+        where.clubId = clubId;
+      } else {
+        where.clubId = { in: clubIds };
+      }
+    } else {
+      // Regular users see their own analytics? (Usually not, but for safety)
+      where.userId = currentUser.userId;
     }
 
-    // Get all invoices for this club
+    // Get all invoices based on filter
     const invoices = await prisma.invoice.findMany({
-      where: { clubId: club.id },
+      where,
       select: {
         totalAmount: true,
         status: true,
         paymentStatus: true,
         createdAt: true,
         issueDate: true,
+        emailSent: true,
+        invoiceNumber: true,
+        clientName: true,
       },
     });
 
