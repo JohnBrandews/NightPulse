@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
         },
         orderBy: { createdAt: 'desc' },
       });
-      
+
       const receivedMessages = await prisma.message.findMany({
         where: { recipientId: currentUser.userId },
         include: {
@@ -156,7 +157,7 @@ export async function GET(req: NextRequest) {
 
       // Combine and deduplicate conversations
       const conversations = new Map();
-      
+
       sentMessages.forEach(msg => {
         const otherUserId = msg.recipient.id;
         if (!conversations.has(otherUserId)) {

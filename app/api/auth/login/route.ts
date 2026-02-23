@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { verifyPassword, generateToken } from '@/lib/auth';
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { email: validatedData.email },
     });
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'Invalid credentials' },

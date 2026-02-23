@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
