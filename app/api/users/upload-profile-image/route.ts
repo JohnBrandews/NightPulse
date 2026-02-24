@@ -1,10 +1,9 @@
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import crypto from 'crypto';
-
-export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
