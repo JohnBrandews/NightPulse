@@ -32,8 +32,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    const stringToSign = `timestamp=${timestamp}`;
-    const signature = crypto.createHash('sha1').update(stringToSign + apiSecret).digest('hex');
+    // ✅ Correct Cloudinary signature - params in alphabetical order + apiSecret at end
+    const folder = 'nightpulse';
+    const stringToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
 
     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
     body.append('timestamp', String(timestamp));
     body.append('api_key', apiKey);
     body.append('signature', signature);
+    body.append('folder', folder);
 
     const res = await fetch(uploadUrl, { method: 'POST', body });
     if (!res.ok) {
